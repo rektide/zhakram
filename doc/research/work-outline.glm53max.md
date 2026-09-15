@@ -57,12 +57,13 @@ zena-jco/
 | ID | Workstream | Status | Depends on |
 | --- | --- | --- | --- |
 | W1 | p2-direct zena host kit | ✅ **green Node + browser** ("hello p2" via wasi:cli/stdout, no WAT surgery) | F1 |
-| W2 | emoji trio | zena leg ✅ **green Node + browser** — `pick() -> string` via indirect canonical ABI + WASI p2 random (`examples/emoji-zena/run.sh`); rust leg built+committed (`crates/`); remaining: cross-consumers | W3, F1 |
+| W2 | emoji trio | ✅ **all three green**: emoji-wit (contract), emoji-zena (Node+browser, indirect cabi string), emoji-rs (Node+browser; `wasi:random@0.2.6` satisfied version-blind) | W3, F1 |
 | W3 | `lib/cabi.zena` — canonical ABI in zena source | ✅ **done** — string lift/lower, indirect result form, post-return free (proven by emoji-zena, Node + browser) | — |
-| W4 | interop trio (jshost / static / matrix) | jshost: p2-direct proofs green (WAT + zena); static unstarted; matrix after parts | W1, W2 |
+| W4 | interop trio (jshost / static / matrix) | ✅ **matrix green** (verified 2026-09-15): 8 pass / 2 skip / 2 n-a / 0 fail, browser legs included; first zena↔zena composition; static rust→zena composes to a zero-import component. Skips = the interface-export naming gap (F5) | W1, W2 |
 | W5 | `packages/` pipeline tooling | not started; pipeline proven as shell scripts | W1–W3 stabilizing |
 | F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0. 2nd fork fix landed 2026-09-15 (`--dce` intrinsic-family cull — see findings log) | — |
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
+| F5 | fork: export-name mangling for interface exports | **new candidate (2026-09-15)** — zena cannot satisfy interface exports (`component new` needs core export `rektide:interop/rng@0.1.0#next`; zena export names are identifiers). Flat world-level exports and interface *imports* both work. An export-naming decorator closes the two static-composition skip cells | — |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
 | W7 | p3 frontier characterization | not started; telemetry/wasi-otel explored in [`jco-telemetry.glm53flash.md`](jco-telemetry.glm53flash.md) | — |
 
@@ -199,6 +200,22 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
   consumer.
 
 ## Findings log (newest first)
+
+- **2026-09-15 — interop matrix green; three findings**: (1) jco shims are
+  **version-blind** — `wasi:random/random@0.2.6` imports are satisfied by
+  the shim's plain-JS interfaces, no `--map` or version-matching needed;
+  (2) **zena cannot satisfy interface exports** (mangled `ns:pkg/iface#func`
+  core export names) — flat world exports and interface imports both work;
+  this is fork candidate F5 and the only gap behind the two static-composition
+  SKIP cells; (3) `wac plug` composes **wasm-gc zena components without
+  complaint** — the GC worry never materialized; the rust-gen→zena-consumer
+  static composition closes to a component with **zero remaining imports**.
+  Also: jco's `-I` instantiation mode disables shim auto-wiring entirely
+  (all imports from the `imports` object) — the natural host-composition
+  API, worth documenting upstream. And a wasm32-wasip2 build footgun:
+  building a cdylib command alone can clobber the lib artifact with an
+  empty-world variant (feature unification) — `crates/*/build.sh` orders
+  builds to avoid it.
 
 - **2026-09-15 — indirect string results**: canonical ABI `MAX_FLAT_RESULTS=1`
   — a `string` result is a single i32 pointing at an 8-byte `(ptr, len)`
