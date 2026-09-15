@@ -1,11 +1,14 @@
 // Worlds for the zena entries of the interop matrix
 // (examples/interop-matrix). The rng interface is a verbatim copy of the
-// contract in examples/emoji-wit/wit/interop.wit; the worlds are "flat"
-// variants designed around what a zena core module can express:
+// contract in examples/emoji-wit/wit/interop.wit; the "flat" worlds were
+// designed around what a zena core module could express before the fork's
+// @exportName decorator:
 //
-//   - zena cannot emit the mangled core export name that an *interface*
-//     export requires (`rektide:interop/rng@0.1.0#next`), so the zena
-//     generator exports a world-level `next` function instead.
+//   - interface *exports* need the mangled core export name
+//     (`rektide:interop/rng@0.1.0#next`), which zena identifiers cannot
+//     spell — @exportName now provides it, so rng-zena uses
+//     `rng-source-both` (interface + flat) instead of the flat-only
+//     world.
 //   - importing the interface *is* expressible (module name is the plain
 //     qualified interface name, exactly like the wasi p2-direct externals),
 //     so the zena consumer imports the real interface.
@@ -13,6 +16,18 @@ package rektide:interop@0.1.0;
 
 interface rng {
   next: func() -> s32;
+}
+
+/// Both surfaces of the same rng: the `rektide:interop/rng` interface
+/// export (what the consumers import — satisfiable by wac plug under
+/// static composition) plus a world-level `next` (what the JS host reads
+/// as `inst.next` in jshost mode). The zena generator's core module
+/// exports both `next` and the mangled
+/// `rektide:interop/rng@0.1.0#next` (via @exportName); each lifts to its
+/// own component export.
+world rng-source-both {
+  export rng;
+  export next: func() -> s32;
 }
 
 /// Flat variant of `rng-source`: the same rng, exported as a world-level

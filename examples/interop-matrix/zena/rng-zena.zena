@@ -1,9 +1,15 @@
 // rng-zena — the zena generator for the interop matrix.
 //
-// Implements `rektide:interop/rng-source-flat@0.1.0`: a world-level `next`
-// export returning small deterministic s32 values. Same role as
-// crates/rng-rs, same xorshift64 family, but seeded 42 and kept in pure zena
-// (no external imports at all — state lives in linear memory).
+// Implements `rektide:interop/rng-source-both@0.1.0`: the same rng
+// exported twice — as a world-level `next` (flat, for the JS host, which
+// reads `inst.next` in jshost mode) and as the `rektide:interop/rng`
+// *interface* export (for static composition, where wac plug must match
+// the consumers' interface import). The interface surface needs the
+// mangled core export name `rektide:interop/rng@0.1.0#next`, which zena
+// identifiers cannot spell — hence the fork's @exportName decorator.
+// Same role as crates/rng-rs, same xorshift64 family, but seeded 42 and
+// kept in pure zena (no external imports at all — state lives in linear
+// memory).
 //
 // Algorithm (mirrored by the BigInt model in run.mjs):
 //   state ^= state << 13   (mod 2^64)
@@ -30,3 +36,6 @@ export let next = (): i32 => {
   mem.setI64(STATE_ADDR, x);
   return ((x & (0xFFFFFFFF as i64)) as i32) % 100;
 };
+
+@exportName("rektide:interop/rng@0.1.0#next")
+export let rngNext = (): i32 => next();

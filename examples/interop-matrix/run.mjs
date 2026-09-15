@@ -3,7 +3,9 @@
 // {mode: jshost|static}.
 //
 //   generator  rng-rs (crates/rng-rs, interface export) or rng-zena
-//              (zena/rng-zena.zena, flat world-level `next` export)
+//              (zena/rng-zena.zena — rng-source-both world: the
+//              rektide:interop/rng interface export via @exportName's
+//              mangled core name, plus a flat world-level `next`)
 //   consumer   consume-rs (lib, read() -> string), consume-zena
 //              (read() -> string via indirect cabi), or js (the host itself)
 //   jshost     JS host instantiates both and wires rng.next through the
@@ -90,7 +92,7 @@ async function buildRust() {
 async function buildZena() {
   await mkdir(path.join(here, 'build'), { recursive: true });
   for (const [src, name, world] of [
-    ['zena/rng-zena.zena', 'rng-zena', 'rektide:interop/rng-source-flat@0.1.0'],
+    ['zena/rng-zena.zena', 'rng-zena', 'rektide:interop/rng-source-both@0.1.0'],
     ['zena/consume-zena.zena', 'consume-zena', 'rektide:interop/rng-reader-flat@0.1.0'],
   ]) {
     await run('node', [zenaCli, 'build', src, '--dce', '-o', `build/${name}.core.wasm`]);
@@ -163,13 +165,9 @@ async function cellStatic(gen, consumer) {
     await run('wac', ['plug', socket, '--plug', plug, '-o', `build/${name}.wasm`]);
   } catch (e) {
     const detail = (e.stderr ?? e.message ?? String(e)).trim().split('\n')[0];
-    // Known limitation: the zena generator exports a world-level `next`
-    // (zena cannot emit the mangled interface export name
-    // `rektide:interop/rng@0.1.0#next`), so it cannot satisfy an *interface*
-    // import under static composition. Any other error is a real failure.
-    if (gen === 'zena' && /no matching imports for the plugs/.test(detail)) {
-      return { skip: `wac plug: ${detail} (flat \`next\` export ≠ interface import)` };
-    }
+    // The zena generator exports the rng interface (mangled core name via
+    // @exportName), so every plug should compose now — any wac failure is
+    // a real failure.
     throw new Error(`wac plug failed unexpectedly: ${detail}`);
   }
   await transpile(`build/${name}.wasm`, `build/${name}-out`);
