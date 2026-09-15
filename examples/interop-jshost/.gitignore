@@ -1,0 +1,3 @@
+*.wasm
+p2-out/
+p2-zena-out/

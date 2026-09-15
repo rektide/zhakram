@@ -87,17 +87,18 @@ memory and calls blocking-write-and-flush). Same pattern as the fork's
 - `emoji-wit`: `rektide:zena-jco/emoji-picker` world — `pick: func() ->
   string` (random smiley; entropy via `wasi:random/random@0.2.x`
   `get-random-u64` once W1 covers it).
-- `emoji-rs`: Rust impl (cargo-component, p2-native) — in flight.
-- `emoji-zena`: zena impl — requires string return through the canonical
-  ABI (W3): lower `String` into guest memory via `cabi_realloc`, return
-  `(ptr, len)`, free in `cabi_post_pick`.
+- `emoji-rs`: Rust impl — built and committed (wasm32-wasip2); jco leg
+  pending (W4 relaunch).
+- `emoji-zena`: ✅ green (Node + browser) — `pick() -> string` via the
+  indirect canonical ABI (single i32 → 8-byte (ptr,len) area; see
+  findings log), freed by `cabi_post_pick`.
 - Consumers on all sides print to **WASI stdout** (per the operator: "a wasi
   stdout on the reader, whatever stdout is") — zena consumers via W1, Rust
   consumers via their own p2 bindings, JS consumers via console.
 
 ### W3 — `lib/cabi.zena`
 
-The canonical ABI written in zena source over `zena:memory` +
+**Done** (2026-09-15). The canonical ABI in zena source over `zena:memory` +
 `FreeListAllocator`:
 
 - `cabi_realloc(old, oldSize, align, newSize) -> i32` (export name is
@@ -185,13 +186,17 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## In flight right now
 
-- Rust leg (emoji-wit, emoji-rs, rng-rs, consume-rs, interop-static) —
-  interrupted by plan usage limits; crates + emoji-wit staged unverified in
-  the working copy, awaiting completion/verification (agent relaunch or
-  hands-on) once quota resets.
-- Fork F1: **done and committed** (2026-09-15) — pre-rec types for flat-ABI
-  imports and exported entry points; both failure repros pass without WAT
-  surgery; `@zena-lang/compiler` suite fail 0.
+- Rust/W4 relaunch (2026-09-15, quota reset): jco legs for the three Rust
+  crates (transpile+run — including the wasi:random@0.2.6 shim-satisfaction
+  question), `examples/interop-static` under jco, `examples/emoji-rs`
+  consumer docs, cross-consumers, and the `examples/interop-matrix` harness.
+- Fork status: two patches landed — pre-rec type identity (F1) and the
+  DCE intrinsic-family cull fix. Both verified against our pipelines;
+  compiler suite 2285 pass / 0 fail.
+- Noted as wanted by the operator: **zena-authored spans** — guest-side
+  telemetry emission, natural home `lib/zena/otel` (prerequisites now exist:
+  cabi strings + p2-direct externals). Shelved until there's a concrete
+  consumer.
 
 ## Findings log (newest first)
 
