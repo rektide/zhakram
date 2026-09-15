@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "zenajco",
+  "project_id": "4d3868e8-c4a6-42df-9a0a-22ee4e4c9c15"
+}
