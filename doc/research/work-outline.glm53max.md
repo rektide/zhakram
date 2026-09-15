@@ -62,6 +62,7 @@ zena-jco/
 | W4 | interop trio (jshost / static / matrix) | ✅ **matrix green** (verified 2026-09-15): 8 pass / 2 skip / 2 n-a / 0 fail, browser legs included; first zena↔zena composition; static rust→zena composes to a zero-import component. Skips = the interface-export naming gap (F5) | W1, W2 |
 | W5 | `packages/` pipeline tooling | not started; pipeline proven as shell scripts | W1–W3 stabilizing |
 | F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0. 2nd fork fix landed 2026-09-15 (`--dce` intrinsic-family cull — see findings log) | — |
+| otel spans (`lib/zena/otel` + `packages/jcona-otel`) | ✅ **done + verified** — real `wasi:otel/tracing@0.2.0-rc.2` hand-lowered (no resources; indirect results via trailing return-area param), spans flow in Node + browser (`examples/otel-zena`); ticket closed | — |
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
 | F5 | fork: export-name mangling for interface exports | ✅ **done + verified** — `@exportName` decorator (fork tsumxvov) + matrix `rng-source-both` world; matrix now **10 pass / 0 skip / 2 n-a / 0 fail**, incl. wac-fused zena→zena static composition | — |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
@@ -201,6 +202,17 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
   consumer.
 
 ## Findings log (newest first)
+
+- **2026-09-15 — otel landed; two ABI preconceptions corrected**: (1)
+  `wasi:otel/tracing` has **no resources** — the streams/i32-handle precedent
+  didn't transfer; it's flat params + hand-built record images (the 168-byte
+  span-data image with documented offsets lives in lib/zena/otel/otel.zena —
+  a reusable map for any SDK-less guest). (2) Indirect *import* results use a
+  **trailing return-area param** (`[i32] -> []`, host writes into guest
+  memory via the guest's cabi_realloc) — the mirror image of export-side
+  indirect results (`[] -> [i32]`). Also: wasi-otel's push-whole-span-data
+  design is hostile to generated-SDK-less guests; its wkg.lock pins
+  wasi:clocks@0.2.0 vs real 0.2.12 trees (upstream friction worth raising).
 
 - **2026-09-15 — interop matrix green; three findings**: (1) jco shims are
   **version-blind** — `wasi:random/random@0.2.6` imports are satisfied by
