@@ -1,0 +1,11 @@
+[package]
+name = "rng-rs"
+version = "0.1.0"
+edition = "2024"
+description = "rektide:interop/rng-source component: deterministic xorshift rng"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.44.0"
