@@ -150,3 +150,39 @@ surfaces above.
   with handcrafted GC module
 - [`init0.glm53max.md`](init0.glm53max.md) — ladder and stage setting
 - Agent docs (in flight): `jco-host.*.md`, `zena-targets.*.md`
+
+## Addendum 2026-09-14 — the blocker mostly dissolves with `--dce`
+
+The sibling deep dive ([`zena-targets.glm53max.md`](zena-targets.glm53max.md),
+verified empirically) found that **DCE is opt-in** in the zena CLI, and the
+env/console import pollution above is precisely the *non-DCE* prelude
+behavior: `packages/compiler/src/lib/prelude.ts` imports `zena:error` +
+`zena:console` into every module, and without `--dce` all their
+`@external` declares survive. With `zena build … --dce`:
+
+- host target: a trivial program emits a **pristine** module (58 bytes for
+  add-only: zero imports, only user exports — String eliminated, so no
+  `$string*` either),
+- wasi target: only the unconditional `fd_write` + `memory` export remain
+  (`fd_write`+memory are *always* emitted on this target, pinned by
+  `packages/compiler/src/test/wasi/wasi-build_test.ts:256-267`).
+
+So the "candidate fixes" ranking above is obsolete:
+
+- Fixes 1–3 (target-conditional error module, DCE rooting fix, emission
+  flag) are **not needed** for componentization — `--dce` suffices. They may
+  still be worth upstreaming as ergonomics (`--dce` as default, or DCE that
+  also prunes the unconditional fd_write), but nothing blocks on them.
+- Fix 4 (binary stripping) is dead — good.
+- The **real fork candidate** discovered while pushing further is different:
+  rec-group type identity breaks the p1 command adapter's nominal `_start`
+  match — see [`e2-zena-wasi.glm53max.md`](e2-zena-wasi.glm53max.md)
+  ("preRec-for-exports" patch).
+- This doc's original E1 pipeline goes green today with `--dce` +
+  `wasm-tools component embed/new` on the host target (278-byte component,
+  world round-trips; see zena-targets §4).
+
+The architectural finding stands unchanged: **externref/anyref host hooks can
+never cross a component boundary** — they must not exist in
+component-targeted builds. `--dce` is today's answer; a future
+`--target component` would bake it in.

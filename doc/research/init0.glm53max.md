@@ -125,6 +125,9 @@ all of which ship WasmGC now) — but this needs verification end to end.
 
 ## Companions
 
-- `jco-host.*.md` — jco architecture deep dive (in flight)
-- `zena-targets.*.md` — exact emission surface of zena's targets (in flight)
-- `doc/research/README.md` — index (once accepted)
+- [`jco-host.glm53max.md`](jco-host.glm53max.md) — jco architecture deep dive
+- [`zena-targets.glm53max.md`](zena-targets.glm53max.md) — exact emission surface of zena's targets
+- [`getting-started.glm53max.md`](getting-started.glm53max.md) — kickoff, validated facts, ladder, next actions
+- Experiment write-ups: [`e0-flat-world.glm53max.md`](e0-flat-world.glm53max.md),
+  [`e1-zena-flat.glm53max.md`](e1-zena-flat.glm53max.md),
+  [`e2-zena-wasi.glm53max.md`](e2-zena-wasi.glm53max.md)
