@@ -1,0 +1,375 @@
+/**
+ * Guest-side OpenTelemetry spans for zena components.
+ *
+ * Hand-lowered against `wasi:otel/tracing@0.2.0-rc.2` (WebAssembly/wasi-otel,
+ * Phase 2 RC): the zena externals follow the same shapes wasm-tools component
+ * embed validates for the interface, so no bindings generator is involved.
+ *
+ * Canonical-ABI facts this library relies on (all verified empirically against
+ * `wasm-tools component embed/new` + `jco transpile -I async`; see
+ * examples/otel-zena/README.md for the probe trail):
+ *
+ * - `on-start(context: span-context)` flattens to 9 core i32 params
+ *   (trace-id ptr/len, span-id ptr/len, trace-flags, is-remote,
+ *   trace-state ptr/len) — direct flat lowering, like the proven
+ *   wasi:io/streams method externals.
+ * - `on-end(span: span-data)` exceeds MAX_FLAT_PARAMS (40 flat values), so it
+ *   lowers to ONE i32 pointing at a 168-byte record image the guest builds
+ *   by hand (layout in `emitSpan`).
+ * - `current-span-context() -> span-context` exceeds MAX_FLAT_RESULTS, so
+ *   indirect import results lower as a TRAILING RETURN-AREA PARAM
+ *   (`[i32] -> []`): the guest allocates the area, the host writes the record
+ *   into it — nested strings included, allocated through the guest's exported
+ *   `cabi_realloc`. The guest owns and frees those allocations.
+ * - `wasi:clocks/wall-clock.now()` uses the same return-area form.
+ *
+ * Entry modules using this library MUST re-export `cabi_realloc` (zena cannot
+ * re-export imported declarations under a different core export name — the
+ * pick.zena wrapper pattern):
+ *
+ *     import { cabiRealloc } from '<path>/lib/zena/cabi/cabi.zena';
+ *     export let cabi_realloc = (oldPtr: i32, oldSize: i32, align: i32,
+ *       newSize: i32): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
+ *
+ * Nesting: parent linkage comes from `current-span-context` — the host owns
+ * the current-span stack (wasi-otel's propagation model), so `startSpan`
+ * asks the host rather than tracking parents in the guest. Span ids are
+ * generated here (get-random-u64 → hex, top bit cleared for i64 arithmetic);
+ * the root test is the host's all-zero sentinel span-id.
+ *
+ * v1 limits (documented, not hidden): spans are expected to end in LIFO
+ * order relative to their own ancestors (each span lowers private copies of
+ * its identity strings, so *sibling* end order never matters); at most 8
+ * attributes per span; a non-empty host trace-state leaks its nested
+ * allocations (this host always returns `[]`); events/links stay empty.
+ */
+import { newByteArray } from 'zena:byte-array';
+import { FixedArray } from 'zena:fixed-array';
+import { div } from 'zena:math';
+import { Encoding, String } from 'zena:string';
+import { Memory } from 'zena:memory';
+import { cabiFree, cabiRealloc, liftString } from '../cabi/cabi.zena';
+
+// -- wasi:otel/tracing@0.2.0-rc.2 ------------------------------------------------
+
+@external('wasi:otel/tracing@0.2.0-rc.2', 'on-start')
+declare function __onStart(
+  traceIdPtr: i32,
+  traceIdLen: i32,
+  spanIdPtr: i32,
+  spanIdLen: i32,
+  traceFlags: i32,
+  isRemote: i32,
+  traceStatePtr: i32,
+  traceStateLen: i32
+): void;
+
+@external('wasi:otel/tracing@0.2.0-rc.2', 'on-end')
+declare function __onEnd(spanPtr: i32): void;
+
+@external('wasi:otel/tracing@0.2.0-rc.2', 'current-span-context')
+declare function __currentSpanContext(retptr: i32): void;
+
+// -- timing + id entropy ----------------------------------------------------------
+
+@external('wasi:clocks/wall-clock@0.2.12', 'now')
+declare function __wallNow(retptr: i32): void;
+
+@external('wasi:random/random@0.2.12', 'get-random-u64')
+declare function __getRandomU64(): i64;
+
+let mem = Memory.default;
+let HEX = '0123456789abcdef';
+let ZERO_SPAN_ID = '0000000000000000';
+let I63_MASK = 0x7FFFFFFFFFFFFFFF as i64;
+
+/** Instrumentation scope reported in every span (wasi-otel `instrumentation-scope`). */
+export let scopeName: String = 'zena:otel';
+
+/** One `key-value` attribute, lowered once at set time and laid out at end. */
+final class Attr {
+  kPtr: i32;
+  kLen: i32;
+  vPtr: i32;
+  vLen: i32;
+  new(kPtr: i32, kLen: i32, vPtr: i32, vLen: i32)
+    : kPtr = kPtr, kLen = kLen, vPtr = vPtr, vLen = vLen
+  {}
+}
+
+/**
+ * A span handle: everything `endSpan` needs to assemble span-data. Returned
+ * by `startSpan`; pass it back to `setSpanAttr` / `endSpan` / `endSpanError`.
+ */
+export final class OtSpan {
+  name: String;
+  // identity strings lowered into canonical memory at start; on-start and
+  // the eventual span-data image share them, freed after on-end returns.
+  tidPtr: i32;
+  tidLen: i32;
+  sidPtr: i32;
+  sidLen: i32;
+  pidPtr: i32;
+  pidLen: i32;
+  // wall-clock start stamp {seconds, nanoseconds}
+  startSecs: i64;
+  startNanos: i32;
+  attrs: FixedArray<Attr>;
+  var attrCount: i32;
+  new(
+    name: String,
+    tidPtr: i32,
+    tidLen: i32,
+    sidPtr: i32,
+    sidLen: i32,
+    pidPtr: i32,
+    pidLen: i32,
+    startSecs: i64,
+    startNanos: i32
+  )
+    : name = name,
+      tidPtr = tidPtr,
+      tidLen = tidLen,
+      sidPtr = sidPtr,
+      sidLen = sidLen,
+      pidPtr = pidPtr,
+      pidLen = pidLen,
+      startSecs = startSecs,
+      startNanos = startNanos,
+      attrs = new FixedArray<Attr>(8, new Attr(0, 0, 0, 0)),
+      attrCount = 0
+  {}
+}
+
+/** Lower a string into fresh canonical memory; return (ptr, len). */
+let lowerStr = (s: String): inline (i32, i32) => {
+  let len = s.length;
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len; i += 1) {
+    mem.setU8(ptr + i, s.getByteAt(i));
+  }
+  return (ptr, len);
+};
+
+/** Write v as 16 lowercase hex nibbles ending at `end`; return the start. */
+let hex16Into = (bytes: ByteArray, end: i32, v: i64): i32 => {
+  var rest = v;
+  var pos = end;
+  for (var i = 0; i < 16; i += 1) {
+    pos -= 1;
+    bytes[pos] = HEX.getByteAt((rest % (16 as i64)) as i32);
+    rest = div(rest, 16 as i64);
+  }
+  return pos;
+};
+
+/** 32 hex chars (128-bit trace-id) from two sign-cleared random u64s. */
+let randomHex32 = (): String => {
+  let bytes = newByteArray(32);
+  hex16Into(bytes, 16, __getRandomU64() & I63_MASK);
+  hex16Into(bytes, 32, __getRandomU64() & I63_MASK);
+  return String.fromByteArray(bytes, 0, 32, Encoding.WTF8);
+};
+
+/** 16 hex chars (64-bit span-id) from one sign-cleared random u64. */
+let randomHex16 = (): String => {
+  let bytes = newByteArray(16);
+  hex16Into(bytes, 16, __getRandomU64() & I63_MASK);
+  return String.fromByteArray(bytes, 0, 16, Encoding.WTF8);
+};
+
+/** Read wall-clock now() into (seconds, nanoseconds), freeing its 16-byte area. */
+let wallNow = (): inline (i64, i32) => {
+  let area = cabiRealloc(0, 0, 8, 16);
+  __wallNow(area);
+  let secs = mem.getI64(area);
+  let nanos = mem.getI32(area + 8);
+  cabiFree(area, 16, 8);
+  return (secs, nanos);
+};
+
+/**
+ * Start a span: ask the host for the current span-context (parent linkage),
+ * generate ids, stamp the start time, and push `on-start`.
+ */
+export let startSpan = (name: String): OtSpan => {
+  // Return-area form: we allocate the 28-byte span-context, the host writes
+  // it (nested strings via our cabi_realloc export); we own + free them.
+  let ctx = cabiRealloc(0, 0, 4, 28);
+  __currentSpanContext(ctx);
+  let parentTracePtr = mem.getI32(ctx);
+  let parentTraceLen = mem.getI32(ctx + 4);
+  let parentSpanPtr = mem.getI32(ctx + 8);
+  let parentSpanLen = mem.getI32(ctx + 12);
+  let parentTraceId = liftString(parentTracePtr, parentTraceLen);
+  let parentSpanId = liftString(parentSpanPtr, parentSpanLen);
+  let isRoot = parentSpanId == ZERO_SPAN_ID;
+
+  let (tidPtr, tidLen) = if (isRoot)
+    lowerStr(randomHex32())
+  else
+    lowerStr(parentTraceId);
+  let (pidPtr, pidLen) = if (isRoot) lowerStr('') else lowerStr(parentSpanId);
+  let (sidPtr, sidLen) = lowerStr(randomHex16());
+  let (startSecs, startNanos) = wallNow();
+
+  // on-start: the 9 flat params of the lowered span-context (sampled=1,
+  // not-remote, empty trace-state).
+  __onStart(tidPtr, tidLen, sidPtr, sidLen, 1, 0, 0, 0);
+
+  // free the host-written context strings + record
+  cabiFree(parentTracePtr, parentTraceLen, 1);
+  cabiFree(parentSpanPtr, parentSpanLen, 1);
+  cabiFree(ctx, 28, 4);
+
+  return new OtSpan(
+    name, tidPtr, tidLen, sidPtr, sidLen, pidPtr, pidLen, startSecs, startNanos
+  );
+};
+
+/** Attach an attribute (v1 cap: 8 per span, silently dropped past that). */
+export let setSpanAttr = (span: OtSpan, key: String, value: String): void => {
+  if (span.attrCount >= 8) {
+    return;
+  }
+  let (kPtr, kLen) = lowerStr(key);
+  let (vPtr, vLen) = lowerStr(value);
+  span.attrs[span.attrCount] = new Attr(kPtr, kLen, vPtr, vLen);
+  span.attrCount += 1;
+};
+
+/** span-data canonical-ABI record: size 168, align 8 (see emitSpan stores). */
+let SPAN_DATA_SIZE = 168;
+
+/**
+ * Assemble span-data, push `on-end`, and release everything the span owned.
+ * statusDisc: 0 = unset, 2 = error(string) — payload only read for disc 2.
+ */
+let emitSpan = (span: OtSpan, statusDisc: i32, errorMsg: String): void => {
+  let (endSecs, endNanos) = wallNow();
+  let (namePtr, nameLen) = lowerStr(span.name);
+  let (scopePtr, scopeLen) = lowerStr(scopeName);
+
+  // attributes: a contiguous array of count elements, each the 16-byte
+  // flat image of `record key-value { key: string, value: string }`.
+  var attrsPtr = 0;
+  var attrsLen = 0;
+  if (span.attrCount > 0) {
+    attrsLen = span.attrCount;
+    attrsPtr = cabiRealloc(0, 0, 4, attrsLen * 16);
+    for (var i = 0; i < attrsLen; i += 1) {
+      let a = span.attrs[i];
+      let base = attrsPtr + i * 16;
+      mem.setI32(base, a.kPtr);
+      mem.setI32(base + 4, a.kLen);
+      mem.setI32(base + 8, a.vPtr);
+      mem.setI32(base + 12, a.vLen);
+    }
+  }
+
+  var errPtr = 0;
+  var errLen = 0;
+  if (statusDisc == 2) {
+    let (ep, el) = lowerStr(errorMsg);
+    errPtr = ep;
+    errLen = el;
+  }
+
+  let sd = cabiRealloc(0, 0, 8, SPAN_DATA_SIZE);
+  //   0 span-context: trace-id (ptr,len)
+  mem.setI32(sd + 0, span.tidPtr);
+  mem.setI32(sd + 4, span.tidLen);
+  //   8 span-context: span-id (ptr,len)
+  mem.setI32(sd + 8, span.sidPtr);
+  mem.setI32(sd + 12, span.sidLen);
+  //  16 span-context: trace-flags u8 (bit 0 = sampled)
+  mem.setU8(sd + 16, 1);
+  //  17 span-context: is-remote bool u8
+  mem.setU8(sd + 17, 0);
+  //  20 span-context: trace-state (ptr,len) — empty
+  mem.setI32(sd + 20, 0);
+  mem.setI32(sd + 24, 0);
+  //  28 parent-span-id (ptr,len)
+  mem.setI32(sd + 28, span.pidPtr);
+  mem.setI32(sd + 32, span.pidLen);
+  //  36 span-kind enum u8 — 4 = internal
+  mem.setU8(sd + 36, 4);
+  //  40 name (ptr,len)
+  mem.setI32(sd + 40, namePtr);
+  mem.setI32(sd + 44, nameLen);
+  //  48 start-time datetime {u64 seconds, u32 nanoseconds} (align 8)
+  mem.setI64(sd + 48, span.startSecs);
+  mem.setI32(sd + 56, span.startNanos);
+  //  64 end-time datetime
+  mem.setI64(sd + 64, endSecs);
+  mem.setI32(sd + 72, endNanos);
+  //  80 attributes (ptr,len)
+  mem.setI32(sd + 80, attrsPtr);
+  mem.setI32(sd + 84, attrsLen);
+  //  88 events (ptr,len) — empty in v1
+  mem.setI32(sd + 88, 0);
+  mem.setI32(sd + 92, 0);
+  //  96 links (ptr,len) — empty in v1
+  mem.setI32(sd + 96, 0);
+  mem.setI32(sd + 100, 0);
+  // 104 status variant {u8 disc, string payload @108}
+  mem.setU8(sd + 104, statusDisc);
+  mem.setI32(sd + 108, errPtr);
+  mem.setI32(sd + 112, errLen);
+  // 116 instrumentation-scope: name (ptr,len)
+  mem.setI32(sd + 116, scopePtr);
+  mem.setI32(sd + 120, scopeLen);
+  // 124 scope: version option<string> — none (u8 disc 0)
+  mem.setU8(sd + 124, 0);
+  // 136 scope: schema-url option<string> — none
+  mem.setU8(sd + 136, 0);
+  // 148 scope: attributes (ptr,len) — empty
+  mem.setI32(sd + 148, 0);
+  mem.setI32(sd + 152, 0);
+  // 156/160/164 dropped-{attributes,events,links} u32
+  mem.setI32(sd + 156, 0);
+  mem.setI32(sd + 160, 0);
+  mem.setI32(sd + 164, 0);
+
+  __onEnd(sd);
+
+  // release: span-data, per-end lowered strings, attribute payloads +
+  // element array, and the span's own identity copies.
+  cabiFree(sd, SPAN_DATA_SIZE, 8);
+  cabiFree(namePtr, nameLen, 1);
+  cabiFree(scopePtr, scopeLen, 1);
+  if (errPtr != 0) {
+    cabiFree(errPtr, errLen, 1);
+  }
+  for (var j = 0; j < attrsLen; j += 1) {
+    let a = span.attrs[j];
+    cabiFree(a.kPtr, a.kLen, 1);
+    cabiFree(a.vPtr, a.vLen, 1);
+  }
+  if (attrsPtr != 0) {
+    cabiFree(attrsPtr, attrsLen * 16, 4);
+  }
+  cabiFree(span.tidPtr, span.tidLen, 1);
+  cabiFree(span.sidPtr, span.sidLen, 1);
+  cabiFree(span.pidPtr, span.pidLen, 1);
+};
+
+/** End a span with status `unset` (the OTel default). */
+export let endSpan = (span: OtSpan): void => {
+  emitSpan(span, 0, '');
+};
+
+/** End a span with status `error(message)`. */
+export let endSpanError = (span: OtSpan, message: String): void => {
+  emitSpan(span, 2, message);
+};
+
+/**
+ * `withSpan(name, fn)` sugar: start, run, end (status unset). Traps inside
+ * fn abort the component, so no try/finally is needed to keep spans honest.
+ */
+export let withSpan = (name: String, fn: () => void): void => {
+  let span = startSpan(name);
+  fn();
+  endSpan(span);
+};
