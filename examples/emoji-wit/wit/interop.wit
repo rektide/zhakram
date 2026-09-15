@@ -1,0 +1,28 @@
+package rektide:interop@0.1.0;
+
+interface rng {
+  next: func() -> s32;
+}
+
+world rng-source {
+  export rng;
+}
+
+world rng-reader {
+  import rng;
+  /// Draws 5 numbers via rng, returns them as a comma-separated string.
+  export read: func() -> string;
+}
+
+/// Command variant of `rng-reader`: a WASI P2 command (wasi:cli/run) that
+/// draws 5 numbers via rng and prints them to stdout.
+///
+/// Note: a Rust `wasm32-wasip2` command also links the standard reactor
+/// surface (wasi:cli environment/exit/stdin/stderr/terminal-*, wasi:io
+/// poll/error/streams at @0.2.6); the imports below are the semantic
+/// dependencies of this world, not an exhaustive linking description.
+world rng-reader-command {
+  import rng;
+  import wasi:cli/stdout@0.2.6;
+  export wasi:cli/run@0.2.0;
+}

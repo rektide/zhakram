@@ -1,0 +1,11 @@
+package rektide:zena-jco@0.1.0;
+
+world emoji-picker {
+  /// Source of the seed for the emoji shuffle. The host satisfies this with
+  /// jco's preview2-shim (`@bytecodealliance/preview2-shim/random`) or a WASI
+  /// P2 host; it is not part of the component-to-component surface.
+  import wasi:random/random@0.2.0;
+
+  /// Returns one emoji, chosen randomly, from a fixed smiley set.
+  export pick: func() -> string;
+}
