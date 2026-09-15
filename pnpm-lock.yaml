@@ -15,6 +15,19 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
     devDependencies:
+      jcona:
+        specifier: workspace:*
+        version: link:packages/jcona
+      playwright:
+        specifier: ^1.63.0
+        version: 1.63.0
+
+  packages/jcona:
+    dependencies:
+      '@bytecodealliance/jco':
+        specifier: ^1.33.0
+        version: 1.33.0
+    devDependencies:
       playwright:
         specifier: ^1.63.0
         version: 1.63.0

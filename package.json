@@ -24,6 +24,7 @@
 		"@bytecodealliance/preview2-shim": "^0.24.1"
 	},
 	"devDependencies": {
+		"jcona": "workspace:*",
 		"playwright": "^1.63.0"
 	}
 }
