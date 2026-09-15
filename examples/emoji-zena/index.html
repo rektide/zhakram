@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>emoji-zena under jco, in the browser</title>
+<script type="importmap">
+{
+  "imports": {
+    "@bytecodealliance/preview2-shim/random": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/random.js"
+  }
+}
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  const el = document.getElementById('status');
+  try {
+    const m = await import('./out/emoji.component.js');
+    const picks = [m.pick(), m.pick(), m.pick()];
+    el.textContent = picks.every((s) => typeof s === 'string' && s.length > 0)
+      ? 'EMOJI-ZENA-BROWSER-OK: ' + picks.join(' ')
+      : 'EMOJI-ZENA-BROWSER-FAIL: ' + JSON.stringify(picks);
+  } catch (e) {
+    let detail;
+    try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch { detail = String(e); }
+    el.textContent = 'EMOJI-ZENA-BROWSER-ERROR: ' + detail;
+  }
+  document.title = el.textContent;
+</script>
+</body>

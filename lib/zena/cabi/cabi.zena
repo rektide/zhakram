@@ -69,6 +69,43 @@ export let liftString = (ptr: i32, len: i32): String => {
   return String.fromByteArray(bytes, 0, len, Encoding.WTF8);
 };
 
+/**
+ * Lower a string for a WIT `string` RESULT using the indirect (retptr)
+ * form. Canonical ABI MAX_FLAT_RESULTS is 1, so a lowered string
+ * (ptr, len) cannot be a direct multi-value return: the guest allocates an
+ * 8-byte result area (align 4) holding (ptr, len) and returns its address
+ * as the single i32 result. Verified against `wasm-tools component embed`
+ * expectations ("expected `[] -> [I32]`") — the direct two-result form is
+ * rejected.
+ */
+export let lowerStringIndirect = (value: String): i32 => {
+  let len = value.length;
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len; i += 1) {
+    memory.setU8(ptr + i, value.getByteAt(i));
+  }
+  let area = cabiRealloc(0, 0, 4, 8);
+  memory.setI32(area, ptr);
+  memory.setI32(area + 4, len);
+  return area;
+};
+
+/**
+ * Free an indirect string result area after the host has consumed it.
+ * Intended for `cabi_post_<fn>` exports, which receive the core return
+ * value — here the area address.
+ */
+export let freeStringIndirect = (area: i32): void => {
+  if (area != 0) {
+    let ptr = memory.getI32(area);
+    let len = memory.getI32(area + 4);
+    if (ptr != 0) {
+      cabiFree(ptr, len, 1);
+    }
+    cabiFree(area, 8, 4);
+  }
+};
+
 /** Release a canonical allocation after its contents have been consumed. */
 export let cabiFree = (ptr: i32, size: i32, align: i32): void => {
   if (ptr != 0) {

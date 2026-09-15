@@ -3,9 +3,9 @@ import { newByteArray } from 'zena:byte-array';
 import { FixedArray } from 'zena:fixed-array';
 import { Encoding, String } from 'zena:string';
 import {
-  cabiFree,
   cabiRealloc,
-  lowerString,
+  freeStringIndirect,
+  lowerStringIndirect,
 } from '../../lib/zena/cabi/cabi.zena';
 
 @external("wasi:random/random@0.2.12", "get-random-u64")
@@ -38,15 +38,16 @@ export let cabi_realloc = (
   newSize: i32
 ): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
 
-export let pick = (): inline (i32, i32) => {
+export let pick = (): i32 => {
   // WIT u64 lowers to core i64. Clear its sign bit before signed remainder.
   let random = __getRandomU64() & (0x7FFFFFFFFFFFFFFF as i64);
   let index = (random % (smileys.length as i64)) as i32;
   let bytes = smileys[index];
   let value = String.fromByteArray(bytes, 0, bytes.length, Encoding.WTF8);
-  return lowerString(value);
+  // string results use the indirect form: one i32 pointing at (ptr, len).
+  return lowerStringIndirect(value);
 };
 
-export let cabi_post_pick = (ptr: i32, len: i32): void => {
-  cabiFree(ptr, len, 1);
+export let cabi_post_pick = (area: i32): void => {
+  freeStringIndirect(area);
 };
