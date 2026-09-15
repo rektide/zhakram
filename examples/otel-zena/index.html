@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>otel-zena: guest spans observable in the browser</title>
+<script type="importmap">
+  {
+    "imports": {
+      "@bytecodealliance/preview2-shim/cli": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/cli.js",
+      "@bytecodealliance/preview2-shim/clocks": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/clocks.js",
+      "@bytecodealliance/preview2-shim/io": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/io.js",
+      "@bytecodealliance/preview2-shim/random": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/random.js",
+      "jcona-otel/tracing": "/packages/jcona-otel/dist/tracing.mjs"
+    }
+  }
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  // Browser rerun of the otel-zena demo: the same -I instantiation shape as
+  // host.mjs, with the shim browser builds and the jcona-otel tracing host.
+  // Span lines come from the host sink (on-end fires during guest run()).
+  const el = document.getElementById('status');
+  try {
+    const [cli, clocks, io, random, otel] = await Promise.all([
+      import('@bytecodealliance/preview2-shim/cli'),
+      import('@bytecodealliance/preview2-shim/clocks'),
+      import('@bytecodealliance/preview2-shim/io'),
+      import('@bytecodealliance/preview2-shim/random'),
+      import('jcona-otel/tracing'),
+    ]);
+
+    const lines = [];
+    const tracing = otel.createTracing({
+      sink: {
+        onSpan(ended) {
+          const line = otel.formatSpanLine(ended);
+          lines.push(line);
+          console.log(line);
+        },
+      },
+    });
+
+    const m = await import('./build/otel-demo-out/otel-demo.js');
+    const inst = await m.instantiate(undefined, {
+      'wasi:otel/tracing': tracing,
+      'wasi:clocks/wall-clock': clocks.wallClock,
+      'wasi:random/random': random.random,
+      'wasi:cli/stdout': cli.stdout,
+      'wasi:io/streams': io.streams,
+      'wasi:io/error': io.error,
+    });
+    inst.run();
+
+    const want = ['draw-index', 'render-emoji', 'pick-emoji', 'emoji-demo'];
+    const got = lines.length >= 4;
+    const treeOk = got && lines[lines.length - 1].includes('span emoji-demo');
+    el.textContent = (got && treeOk ? 'OTEL-ZENA-BROWSER-OK: ' : 'OTEL-ZENA-BROWSER-FAIL: ')
+      + lines.join(' | ');
+  } catch (e) {
+    let detail;
+    try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch { detail = String(e); }
+    el.textContent = 'OTEL-ZENA-BROWSER-ERROR: ' + detail;
+  }
+  document.title = el.textContent;
+</script>
+</body>
