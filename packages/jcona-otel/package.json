@@ -1,0 +1,16 @@
+{
+	"name": "jcona-otel",
+	"version": "0.1.0",
+	"description": "JS host side for wasi:otel tracing guests (zena components via jco): current-span stack + pluggable span sink",
+	"type": "module",
+	"license": "MIT",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"build": "tsdown"
+	},
+	"devDependencies": {
+		"tsdown": "latest"
+	}
+}
