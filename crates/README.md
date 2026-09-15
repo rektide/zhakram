@@ -21,8 +21,18 @@ Artifacts land at `target/wasm32-wasip2/release/<crate>.wasm`. The lib crates
 are components ready for composition (`wac plug`); `consume-rs/cmd` is a
 command component (export `wasi:cli/run`).
 
+**Build order (consume-rs only):** building `consume-rs-cmd` builds the lib
+as a dependency with `default-features = false` and clobbers `consume_rs.wasm`
+with an **empty-world** variant (no rng import, no `read` export). Build the
+command first, the lib last with `--features component` —
+[`../examples/interop-static/build.sh`](../examples/interop-static/build.sh)
+does exactly this, and is the canonical entry point.
+
 **Note (2026-09-15):** these crates are staged work, committed as verified by
 plain `cargo build` + `wasm-tools component wit` inspection (and an end-to-end
-`wac plug` + `wasmtime run` of rng-source → rng-reader-command). `cargo
-component build` (0.21.1) does **not** work against them: its bundled
+`wac plug` + `wasmtime run` of rng-source → rng-reader-command); since then
+they are also verified end-to-end under jco — `jco run` of the statically
+composed pair and host-mediated instantiation of the lib
+([`../examples/interop-matrix`](../examples/interop-matrix/README.md)).
+`cargo component build` (0.21.1) does **not** work against them: its bundled
 wit-parser ignores vendored `wit/deps` directories.
