@@ -12,7 +12,9 @@ adapter anywhere.
 `wasi:cli/stdout@0.2.12` under `jco transpile` in both Node and the browser —
 see [`examples/interop-jshost`](/examples/interop-jshost/README.md). Rust
 counterparts for the example worlds build green in [`crates/`](/crates/README.md)
-(staged, see caveats there).
+(staged, see caveats there). Zena guests now also emit **observable spans**
+through hand-lowered `wasi:otel/tracing@0.2.0-rc.2`, Node and browser —
+[`examples/otel-zena`](/examples/otel-zena/README.md).
 
 ## Layout
 
@@ -20,8 +22,9 @@ counterparts for the example worlds build green in [`crates/`](/crates/README.md
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts)                                                                         |
 | [`crates/`](/crates/README.md)     | Rust guest code implementing the example worlds                                                                            |
-| `lib/`                             | zena guest libraries: `lib/zena/cabi` canonical ABI (string lift/lower, realloc — proven by emoji-zena), planned: `lib/zena/wasip2`, `lib/zena/otel` |
+| `lib/`                             | zena guest libraries: `lib/zena/cabi` canonical ABI (string lift/lower, realloc — proven by emoji-zena), `lib/zena/otel` spans via hand-lowered `wasi:otel/tracing@0.2.0-rc.2` (proven by otel-zena), planned: `lib/zena/wasip2` |
 | `packages/jcona/`                  | [`packages/jcona/README.md`](/packages/jcona/README.md) — pipeline tool: `jcona build/transpile/run/serve` over zena → wasm-tools → jco |
+| `packages/jcona-otel/`             | [`packages/jcona-otel/README.md`](/packages/jcona-otel/README.md) — `wasi:otel/tracing` JS host: span stack + pluggable sink (console default) |
 | [`doc/research/`](/doc/README.md)  | research notes + plan of record                                                                                            |
 
 ## Docs
