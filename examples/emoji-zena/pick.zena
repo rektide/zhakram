@@ -1,0 +1,52 @@
+// The first Zena component in this repository to return a canonical string.
+import { newByteArray } from 'zena:byte-array';
+import { FixedArray } from 'zena:fixed-array';
+import { Encoding, String } from 'zena:string';
+import {
+  cabiFree,
+  cabiRealloc,
+  lowerString,
+} from '../../lib/zena/cabi/cabi.zena';
+
+@external("wasi:random/random@0.2.12", "get-random-u64")
+declare function __getRandomU64(): i64;
+
+let emoji = (lastByte: i32): ByteArray => {
+  let bytes = newByteArray(4);
+  bytes[0] = 0xF0;
+  bytes[1] = 0x9F;
+  bytes[2] = 0x98;
+  bytes[3] = lastByte;
+  return bytes;
+};
+
+let smileys = new FixedArray<ByteArray>(8, emoji(0x80));
+smileys[1] = emoji(0x83); // 😃
+smileys[2] = emoji(0x84); // 😄
+smileys[3] = emoji(0x81); // 😁
+smileys[4] = emoji(0x86); // 😆
+smileys[5] = emoji(0x85); // 😅
+smileys[6] = emoji(0x82); // 😂
+smileys[7] = emoji(0x8A); // 😊
+
+// Canonical ABI exports must be declared by the entry module: Zena cannot
+// re-export an imported declaration under a different core export name.
+export let cabi_realloc = (
+  oldPtr: i32,
+  oldSize: i32,
+  align: i32,
+  newSize: i32
+): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
+
+export let pick = (): inline (i32, i32) => {
+  // WIT u64 lowers to core i64. Clear its sign bit before signed remainder.
+  let random = __getRandomU64() & (0x7FFFFFFFFFFFFFFF as i64);
+  let index = (random % (smileys.length as i64)) as i32;
+  let bytes = smileys[index];
+  let value = String.fromByteArray(bytes, 0, bytes.length, Encoding.WTF8);
+  return lowerString(value);
+};
+
+export let cabi_post_pick = (ptr: i32, len: i32): void => {
+  cabiFree(ptr, len, 1);
+};
