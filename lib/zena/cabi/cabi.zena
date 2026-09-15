@@ -1,0 +1,77 @@
+/**
+ * Canonical ABI helpers for Zena components using linear memory.
+ *
+ * The canonical ABI never requests alignment greater than eight bytes. The
+ * standard FreeListAllocator returns eight-byte-aligned pointers, so its plain
+ * alloc/free operations satisfy every canonical allocation request while
+ * retaining enough information for reliable deallocation.
+ */
+import { newByteArray } from 'zena:byte-array';
+import { unreachable } from 'zena:error';
+import { FreeListAllocator, Memory } from 'zena:memory';
+import { Encoding, String } from 'zena:string';
+
+let allocator = FreeListAllocator.default;
+let memory = Memory.default;
+
+let allocate = (size: i32, align: i32): i32 => {
+  if (align <= 0 || align > 8 || (align & (align - 1)) != 0) {
+    unreachable();
+  }
+
+  if (let (true, ptr) = allocator.alloc(size)) {
+    return ptr;
+  }
+  return unreachable();
+};
+
+/** Canonical realloc implementation backed by the default free-list allocator. */
+export let cabiRealloc = (
+  oldPtr: i32,
+  oldSize: i32,
+  align: i32,
+  newSize: i32
+): i32 => {
+  if (newSize == 0) {
+    if (oldPtr != 0) {
+      allocator.free(oldPtr);
+    }
+    return 0;
+  }
+
+  let newPtr = allocate(newSize, align);
+  if (oldPtr != 0 && oldSize > 0) {
+    let copySize = if (oldSize < newSize) oldSize else newSize;
+    for (var i = 0; i < copySize; i += 1) {
+      memory.setU8(newPtr + i, memory.getU8(oldPtr + i));
+    }
+    allocator.free(oldPtr);
+  }
+  return newPtr;
+};
+
+/** Copy a Zena UTF-8 string into canonical linear memory. */
+export let lowerString = (value: String): inline (i32, i32) => {
+  let len = value.length;
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len; i += 1) {
+    memory.setU8(ptr + i, value.getByteAt(i));
+  }
+  return (ptr, len);
+};
+
+/** Lift canonical UTF-8 bytes from linear memory into a Zena string. */
+export let liftString = (ptr: i32, len: i32): String => {
+  let bytes = newByteArray(len);
+  for (var i = 0; i < len; i += 1) {
+    bytes[i] = memory.getU8(ptr + i);
+  }
+  return String.fromByteArray(bytes, 0, len, Encoding.WTF8);
+};
+
+/** Release a canonical allocation after its contents have been consumed. */
+export let cabiFree = (ptr: i32, size: i32, align: i32): void => {
+  if (ptr != 0) {
+    allocator.free(ptr);
+  }
+};
