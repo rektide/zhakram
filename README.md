@@ -2,56 +2,54 @@
 
 > experiments and tools around zena wasm programming language and jco
 
-Hosting [zena-language](https://github.com/rektide/zena-language) (and sibling)
-programs as WebAssembly components on
-[jco](https://github.com/bytecodealliance/jco) — Node and browser, WASI
-P2-direct: guests import `wasi:*@0.2.x` interfaces directly, with no preview1
-adapter anywhere.
+Hosting [zena-language](https://github.com/rektide/zena-language) guests as
+WebAssembly components on [jco](https://github.com/bytecodealliance/jco) —
+Node and browser, WASI P2-direct: guests import `wasi:*@0.2.x` interfaces
+directly, with no preview1 adapter anywhere.
 
-**Status (verified):** the zena p2-direct guest prints via
-`wasi:cli/stdout@0.2.12` under `jco transpile` in both Node and the browser —
-see [`examples/interop-jshost`](/examples/interop-jshost/README.md). Rust
-counterparts for the example worlds build green in [`crates/`](/crates/README.md)
-(staged, see caveats there). Zena guests now also emit **observable spans**
-through hand-lowered `wasi:otel/tracing@0.2.0-rc.2`, Node and browser —
-[`examples/otel-zena`](/examples/otel-zena/README.md).
+**Status (verified):** interop matrix 10/10 green
+([`examples/interop-matrix`](/examples/interop-matrix/README.md)) — {rust,
+zena} generators × {rust, zena, js} consumers × {jshost, static}
+composition. Zena guests emit **observable spans** through hand-lowered
+`wasi:otel/tracing@0.2.0-rc.2`, Node and browser
+([`examples/otel-zena`](/examples/otel-zena/README.md)). The p3/JSPI fork
+frontier is a **bounded GO** per
+[`doc/research/p3-frontier.solmax.md`](/doc/research/p3-frontier.solmax.md).
 
 ## Layout
 
-| Path                               | What                                                                                                                       |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts)                                                                         |
-| [`crates/`](/crates/README.md)     | Rust guest code implementing the example worlds                                                                            |
-| `lib/`                             | zena guest libraries: `lib/zena/cabi` canonical ABI (string lift/lower, realloc — proven by emoji-zena), `lib/zena/otel` spans via hand-lowered `wasi:otel/tracing@0.2.0-rc.2` (proven by otel-zena), planned: `lib/zena/wasip2` |
-| `packages/jcona/`                  | [`packages/jcona/README.md`](/packages/jcona/README.md) — pipeline tool: `jcona build/transpile/run/serve` over zena → wasm-tools → jco |
-| `packages/jcona-otel/`             | [`packages/jcona-otel/README.md`](/packages/jcona-otel/README.md) — `wasi:otel/tracing` JS host: span stack + pluggable sink (console default) |
-| [`doc/research/`](/doc/README.md)  | research notes + plan of record                                                                                            |
+| Path | What |
+| --- | --- |
+| [`lib/zena/`](/lib/zena/README.md) | zena guest libraries: `cabi` (canonical ABI alloc + string lift/lower), `wasip2` (p2-direct stdout/random/clocks wrappers), `otel` (spans) |
+| [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts, Node + browser runs) |
+| [`crates/`](/crates/README.md) | Rust guest twins for the example worlds |
+| [`packages/jcona/`](/packages/jcona/README.md) | the pipeline CLI: `jcona build / transpile / run / serve` over zena → wasm-tools → jco |
+| [`packages/jcona-otel/`](/packages/jcona-otel/README.md) | `wasi:otel/tracing` JS host: span stack + pluggable sink |
+| [`doc/research/`](/doc/README.md) | research notes + plan of record |
 
-## Docs
+## Quickstart (jcona CLI)
 
-- [`doc/research/getting-started.glm53max.md`](/doc/research/getting-started.glm53max.md) — kickoff, validated facts, experiment ladder
-- [`doc/research/work-outline.glm53max.md`](/doc/research/work-outline.glm53max.md) — plan of record: posture, workstreams, sequencing
-
-## Quickstart (p2-direct guest, from `examples/interop-jshost`)
-
-The zena CLI lives in the zena fork checkout (`~/src/zena-jco-fork` here);
-everything else is repo-local:
+The front door is [`packages/jcona`](/packages/jcona/README.md) — the
+zena → wasm-tools → jco pipeline with sane defaults (`./node_modules/.bin/jcona`,
+env-overridable `ZENA_CLI` pointing at the fork checkout):
 
 ```sh
-node ~/src/zena-jco-fork/packages/cli/lib/cli.js build p2-hello-zena.zena --dce -o p2-zena.core.wasm
-wasm-tools component embed wasi-wit p2-zena.core.wasm -o p2-zena.embed.wasm --world zena-jco:p2/p2-hello@0.1.0
-wasm-tools component new p2-zena.embed.wasm -o p2-zena.component.wasm
-../../node_modules/.bin/jco transpile --bindgen-enable-wasm-exnref p2-zena.component.wasm -o p2-zena-out
-node -e "import('./p2-zena-out/p2-zena.component.js').then(m => m.run())"
+cd examples/emoji-zena
+../../node_modules/.bin/jcona build pick.zena \
+  --world zena-jco:emoji/emoji-picker@0.1.0 --wit wit -o emoji.component.wasm
+../../node_modules/.bin/jcona transpile emoji.component.wasm -o out
+../../node_modules/.bin/jcona run out --call pick --repeat 3   # 😃 😄 😁
 ```
 
-Pipeline: zena → core wasm (wasm-gc) → component embed (WIT metadata) →
-component new → `jco transpile` → run on Node (`index.html` covers the
-browser). The same pipeline, wrapped with sane defaults:
-[`packages/jcona`](/packages/jcona/README.md) (`jcona build / transpile /
-run / serve`). Details and the verified p2 contract:
+Or just run an example's script — `./run.sh` (emoji-zena, otel-zena),
+`node run.mjs` (interop-matrix) — each verifies Node and browser.
+
+Raw pipeline + the verified p2-direct contract (import module names,
+resource handles, the stdout do-not-drop lesson):
 [`examples/interop-jshost/README.md`](/examples/interop-jshost/README.md).
-For a guest that *returns* a string,
-[`examples/emoji-zena/run.sh`](/examples/emoji-zena/run.sh) runs the same
-pipeline on `pick.zena` (indirect canonical-ABI string result + `wasi:random`)
-and prints a random emoji.
+
+## Docs & tickets
+
+- Plan of record: [`doc/research/work-outline.glm53max.md`](/doc/research/work-outline.glm53max.md)
+  (posture, workstreams, sequencing, fork strategy)
+- Open work: `bd list --status open` (beads tickets in `.beads/`)
