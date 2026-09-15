@@ -18,5 +18,9 @@
 		"url": "https://github.com/rektide/zena-jco/issues"
 	},
 	"homepage": "https://github.com/rektide/zena-jco#readme",
-	"module": "zena-jco.js"
+	"module": "zena-jco.js",
+	"dependencies": {
+		"@bytecodealliance/jco": "^1.33.0",
+		"@bytecodealliance/preview2-shim": "^0.24.1"
+	}
 }
