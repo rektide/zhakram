@@ -57,11 +57,11 @@ zena-jco/
 | ID | Workstream | Status | Depends on |
 | --- | --- | --- | --- |
 | W1 | p2-direct zena host kit | ✅ **green Node + browser** ("hello p2" via wasi:cli/stdout, no WAT surgery) | F1 |
-| W2 | emoji trio | WIT+Rust partially staged (agent died to quota; crates/emoji-rs, rng-rs, consume-rs + examples/emoji-wit exist unverified); zena leg awaits W3 | W3, F1 |
-| W3 | `lib/cabi.zena` — canonical ABI in zena source | not started; design known (zena-targets §5) | — |
+| W2 | emoji trio | zena leg ✅ **green Node + browser** — `pick() -> string` via indirect canonical ABI + WASI p2 random (`examples/emoji-zena/run.sh`); rust leg built+committed (`crates/`); remaining: cross-consumers | W3, F1 |
+| W3 | `lib/cabi.zena` — canonical ABI in zena source | ✅ **done** — string lift/lower, indirect result form, post-return free (proven by emoji-zena, Node + browser) | — |
 | W4 | interop trio (jshost / static / matrix) | jshost: p2-direct proofs green (WAT + zena); static unstarted; matrix after parts | W1, W2 |
 | W5 | `packages/` pipeline tooling | not started; pipeline proven as shell scripts | W1–W3 stabilizing |
-| F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0 | — |
+| F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0. 2nd fork fix landed 2026-09-15 (`--dce` intrinsic-family cull — see findings log) | — |
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
 | W7 | p3 frontier characterization | not started; telemetry/wasi-otel explored in [`jco-telemetry.glm53flash.md`](jco-telemetry.glm53flash.md) | — |
@@ -155,10 +155,10 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Sequencing
 
-1. **F1 lands** → W1 zena leg green; delete WAT hack from E2/E5 scripts.
-2. **W3 cabi.zena** → emoji-zena `pick()` green in Node (+ browser page).
-3. **W4 matrix harness** starts with available cells; rust-agent deliveries
-   (emoji-rs, rng-rs, consume-rs, interop-static) slot in.
+1. ✅ **done** — F1 landed; W1 zena leg green; WAT hack deleted from E2/E5 scripts.
+2. ✅ **done** — W3 `cabi.zena`; emoji-zena `pick()` green in Node + browser.
+3. **next** — W4 matrix harness starts with available cells; rust relaunch
+   delivers (emoji-rs, rng-rs, consume-rs, interop-static) slot in.
 4. **W5 tooling** consolidates the pipelines.
 5. **W7 p3 probe** → fork strategy conversation (F2/F3/F4) with evidence.
 
@@ -195,6 +195,18 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-15 — indirect string results**: canonical ABI `MAX_FLAT_RESULTS=1`
+  — a `string` result is a single i32 pointing at an 8-byte `(ptr, len)`
+  area in memory, **not** a direct `(ptr, len)` multi-value return. Related
+  trap: a cryptic `component new: failed to validate component output …
+  expected i64, found i32` usually means the **core** module itself is
+  invalid — run `wasm-tools validate` on the core module before blaming the
+  component-ization step. (Found wiring emoji-zena `pick()`.)
+- **2026-09-15 — fork codegen bug fixed (2nd fork patch)**: under `--dce`,
+  `@intrinsic` overload families (zena:math `div`) were culled to a single
+  wrong overload, emitting `i64.div_u` over i32 operands → invalid core
+  module. Fix: register whole intrinsic families in pass 0. Compiler suite
+  2285 pass / 0 fail.
 - **2026-09-15 — browser shim quirk**: preview2-shim *browser* build throws
   `{tag:"closed"}` when a guest `[resource-drop]s` the stdout output-stream
   after writing; the Node build does not. `get-stdout` returns an owned

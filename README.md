@@ -46,3 +46,7 @@ Pipeline: zena → core wasm (wasm-gc) → component embed (WIT metadata) →
 component new → `jco transpile` → run on Node (`index.html` covers the
 browser). Details and the verified p2 contract:
 [`examples/interop-jshost/README.md`](/examples/interop-jshost/README.md).
+For a guest that *returns* a string,
+[`examples/emoji-zena/run.sh`](/examples/emoji-zena/run.sh) runs the same
+pipeline on `pick.zena` (indirect canonical-ABI string result + `wasi:random`)
+and prints a random emoji.
