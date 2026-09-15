@@ -16,6 +16,11 @@ browser.
 ./run.sh
 ```
 
+`run.sh` is thin calls into the repo pipeline tool
+([`packages/jcona`](../../packages/jcona/README.md)): `jcona build
+--rust-artifact` (cargo component pass-through) → `jcona transpile` →
+`jcona run out --call pick --repeat 3`.
+
 Node output (emoji varies — the seed is host randomness):
 
 ```text
@@ -61,6 +66,10 @@ builds (the reactor set is bigger than the zena twin's, which needed only
 }
 ```
 
-Helper checkers for reproducing the browser run live at
-[`.test-agent/serve.mjs`](../../.test-agent/serve.mjs) and
-[`.test-agent/browser-check.mjs`](../../.test-agent/browser-check.mjs).
+Browser check (from the repo root — serves with ES-module MIME, then loads
+the page in headless Chrome):
+
+```sh
+../../node_modules/.bin/jcona serve . --check examples/emoji-rs/index.html
+# STATUS: EMOJI-RS-BROWSER-OK: 😉 😉 😀
+```

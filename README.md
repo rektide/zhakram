@@ -21,7 +21,7 @@ counterparts for the example worlds build green in [`crates/`](/crates/README.md
 | [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts)                                                                         |
 | [`crates/`](/crates/README.md)     | Rust guest code implementing the example worlds                                                                            |
 | `lib/`                             | zena guest libraries: `lib/zena/cabi` canonical ABI (string lift/lower, realloc — proven by emoji-zena), planned: `lib/zena/wasip2`, `lib/zena/otel` |
-| `packages/`                        | host-side TS tooling — planned                                                                                             |
+| `packages/jcona/`                  | [`packages/jcona/README.md`](/packages/jcona/README.md) — pipeline tool: `jcona build/transpile/run/serve` over zena → wasm-tools → jco |
 | [`doc/research/`](/doc/README.md)  | research notes + plan of record                                                                                            |
 
 ## Docs
@@ -44,7 +44,9 @@ node -e "import('./p2-zena-out/p2-zena.component.js').then(m => m.run())"
 
 Pipeline: zena → core wasm (wasm-gc) → component embed (WIT metadata) →
 component new → `jco transpile` → run on Node (`index.html` covers the
-browser). Details and the verified p2 contract:
+browser). The same pipeline, wrapped with sane defaults:
+[`packages/jcona`](/packages/jcona/README.md) (`jcona build / transpile /
+run / serve`). Details and the verified p2 contract:
 [`examples/interop-jshost/README.md`](/examples/interop-jshost/README.md).
 For a guest that *returns* a string,
 [`examples/emoji-zena/run.sh`](/examples/emoji-zena/run.sh) runs the same
