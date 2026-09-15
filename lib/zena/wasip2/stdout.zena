@@ -1,0 +1,55 @@
+/**
+ * wasi:cli/stdout + wasi:io/streams, p2-direct (0.2.12).
+ *
+ * Proven external shapes lifted from examples/interop-jshost (p2-hello) and
+ * examples/otel-zena (demo): import module names are the plain qualified
+ * interface names, resources are i32 handles, and the versions are
+ * byte-for-byte `@0.2.12`.
+ *
+ * blocking-write-and-flush has no direct core result: the flattened
+ * `result<_, stream-error>` goes through a trailing retptr param (4th i32,
+ * a return area in guest memory). This wrapper allocates that area through
+ * the cabi allocator per call, so it can never collide with guest data.
+ *
+ * **Do not [resource-drop] the stdout handle**: the *browser* preview2-shim
+ * throws `{tag:"closed"}` on dispose after a write lands (Node does not).
+ * `get-stdout` returns an owned handle, so the drop is legal per the ABI —
+ * it is a shim quirk; meanwhile guests skip dropping process-lifetime
+ * stdio handles. This module therefore does not even declare the drop
+ * external, so DCE cannot resurrect the bug.
+ */
+import { Memory } from 'zena:memory';
+import { String } from 'zena:string';
+import { cabiFree, cabiRealloc } from '../cabi/alloc.zena';
+
+@external('wasi:cli/stdout@0.2.12', 'get-stdout')
+declare function __getStdout(): i32;
+
+@external('wasi:io/streams@0.2.12', '[method]output-stream.blocking-write-and-flush')
+declare function __bwaf(stream: i32, ptr: i32, len: i32, retptr: i32): void;
+
+let memory = Memory.default;
+
+/** Write `len` bytes already in linear memory at `ptr` to stdout, flushing. */
+export let writeBytes = (ptr: i32, len: i32): void => {
+  let scratch = cabiRealloc(0, 0, 4, 4);
+  __bwaf(__getStdout(), ptr, len, scratch);
+  cabiFree(scratch, 4, 4);
+};
+
+/** Lower `text` into canonical memory, write it to stdout, flush, free. */
+export let writeString = (text: String): void => {
+  let len = text.length;
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len; i += 1) {
+    memory.setU8(ptr + i, text.getByteAt(i));
+  }
+  writeBytes(ptr, len);
+  cabiFree(ptr, len, 1);
+};
+
+/** `writeString` plus a trailing newline. */
+export let writeLine = (text: String): void => {
+  writeString(text);
+  writeString('\n');
+};

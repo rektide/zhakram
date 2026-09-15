@@ -1,0 +1,23 @@
+/**
+ * wasi:random/random, p2-direct (0.2.12).
+ *
+ * Proven in examples/emoji-zena (pick) and examples/otel-zena (span id
+ * entropy). WIT `u64` lowers to core `i64`; clear the sign bit before any
+ * signed remainder — the pattern every consumer in this repo uses.
+ */
+@external('wasi:random/random@0.2.12', 'get-random-u64')
+declare function __getRandomU64(): i64;
+
+let I63_MASK = 0x7FFFFFFFFFFFFFFF as i64;
+
+/** One random u64 (WIT u64 lowers to core i64 — sign bit as-is). */
+export let getRandomU64 = (): i64 => __getRandomU64();
+
+/**
+ * Sign-cleared random index in [0, len) — the emoji-zena pattern.
+ * Modulo bias for non-power-of-two lens is fine at demo grade.
+ */
+export let randomIndex = (len: i32): i32 => {
+  let random = __getRandomU64() & I63_MASK;
+  return (random % (len as i64)) as i32;
+};

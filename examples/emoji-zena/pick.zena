@@ -7,9 +7,7 @@ import {
   freeStringIndirect,
   lowerStringIndirect,
 } from '../../lib/zena/cabi/cabi.zena';
-
-@external("wasi:random/random@0.2.12", "get-random-u64")
-declare function __getRandomU64(): i64;
+import { randomIndex } from '../../lib/zena/wasip2/random.zena';
 
 let emoji = (lastByte: i32): ByteArray => {
   let bytes = newByteArray(4);
@@ -39,9 +37,8 @@ export let cabi_realloc = (
 ): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
 
 export let pick = (): i32 => {
-  // WIT u64 lowers to core i64. Clear its sign bit before signed remainder.
-  let random = __getRandomU64() & (0x7FFFFFFFFFFFFFFF as i64);
-  let index = (random % (smileys.length as i64)) as i32;
+  // WIT u64 → core i64: randomIndex sign-clears before the signed remainder.
+  let index = randomIndex(smileys.length);
   let bytes = smileys[index];
   let value = String.fromByteArray(bytes, 0, bytes.length, Encoding.WTF8);
   // string results use the indirect form: one i32 pointing at (ptr, len).

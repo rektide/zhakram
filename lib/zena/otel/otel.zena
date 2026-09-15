@@ -49,6 +49,8 @@ import { div } from 'zena:math';
 import { Encoding, String } from 'zena:string';
 import { Memory } from 'zena:memory';
 import { cabiFree, cabiRealloc, liftString } from '../cabi/cabi.zena';
+import { wallNow } from '../wasip2/clocks.zena';
+import { getRandomU64 } from '../wasip2/random.zena';
 
 // -- wasi:otel/tracing@0.2.0-rc.2 ------------------------------------------------
 
@@ -69,14 +71,6 @@ declare function __onEnd(spanPtr: i32): void;
 
 @external('wasi:otel/tracing@0.2.0-rc.2', 'current-span-context')
 declare function __currentSpanContext(retptr: i32): void;
-
-// -- timing + id entropy ----------------------------------------------------------
-
-@external('wasi:clocks/wall-clock@0.2.12', 'now')
-declare function __wallNow(retptr: i32): void;
-
-@external('wasi:random/random@0.2.12', 'get-random-u64')
-declare function __getRandomU64(): i64;
 
 let mem = Memory.default;
 let HEX = '0123456789abcdef';
@@ -166,26 +160,16 @@ let hex16Into = (bytes: ByteArray, end: i32, v: i64): i32 => {
 /** 32 hex chars (128-bit trace-id) from two sign-cleared random u64s. */
 let randomHex32 = (): String => {
   let bytes = newByteArray(32);
-  hex16Into(bytes, 16, __getRandomU64() & I63_MASK);
-  hex16Into(bytes, 32, __getRandomU64() & I63_MASK);
+  hex16Into(bytes, 16, getRandomU64() & I63_MASK);
+  hex16Into(bytes, 32, getRandomU64() & I63_MASK);
   return String.fromByteArray(bytes, 0, 32, Encoding.WTF8);
 };
 
 /** 16 hex chars (64-bit span-id) from one sign-cleared random u64. */
 let randomHex16 = (): String => {
   let bytes = newByteArray(16);
-  hex16Into(bytes, 16, __getRandomU64() & I63_MASK);
+  hex16Into(bytes, 16, getRandomU64() & I63_MASK);
   return String.fromByteArray(bytes, 0, 16, Encoding.WTF8);
-};
-
-/** Read wall-clock now() into (seconds, nanoseconds), freeing its 16-byte area. */
-let wallNow = (): inline (i64, i32) => {
-  let area = cabiRealloc(0, 0, 8, 16);
-  __wallNow(area);
-  let secs = mem.getI64(area);
-  let nanos = mem.getI32(area + 8);
-  cabiFree(area, 16, 8);
-  return (secs, nanos);
 };
 
 /**

@@ -1,0 +1,38 @@
+/**
+ * wasi:clocks, p2-direct (0.2.12).
+ *
+ * Two shapes live here because the two interfaces lower differently —
+ * both proven against `wasm-tools component embed/new` + `jco transpile`
+ * (see examples/otel-zena/README.md for the probe trail):
+ *
+ * - `wall-clock.now() -> datetime {u64 seconds, u32 nanoseconds}` is a
+ *   2-value record result, over MAX_FLAT_RESULTS (1): indirect import
+ *   results lower as a TRAILING RETURN-AREA PARAM (`[i32] -> []`) — the
+ *   guest allocates the 16-byte area, the host writes the record into it.
+ *   Proven by lib/zena/otel (span start/end timestamps).
+ * - `monotonic-clock.now() -> instant` is a single flat u64 value, so it
+ *   lowers as a direct i64 core result.
+ */
+import { Memory } from 'zena:memory';
+import { cabiFree, cabiRealloc } from '../cabi/alloc.zena';
+
+@external('wasi:clocks/wall-clock@0.2.12', 'now')
+declare function __wallNow(retptr: i32): void;
+
+@external('wasi:clocks/monotonic-clock@0.2.12', 'now')
+declare function __monotonicNow(): i64;
+
+let memory = Memory.default;
+
+/** Wall-clock now as (seconds, nanoseconds); frees its return area. */
+export let wallNow = (): inline (i64, i32) => {
+  let area = cabiRealloc(0, 0, 8, 16);
+  __wallNow(area);
+  let secs = memory.getI64(area);
+  let nanos = memory.getI32(area + 8);
+  cabiFree(area, 16, 8);
+  return (secs, nanos);
+};
+
+/** Monotonic clock now, in nanoseconds (direct flat i64 result). */
+export let monotonicNow = (): i64 => __monotonicNow();

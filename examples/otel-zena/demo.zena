@@ -7,11 +7,10 @@
 //      └─ render-emoji    (attr index=N)
 //
 // Uses lib/zena/otel (hand-lowered wasi:otel/tracing@0.2.0-rc.2) for spans
-// and the p2-hello pattern for the stdout line.
+// and lib/zena/wasip2 for the stdout line + random draw.
 import { FixedArray } from 'zena:fixed-array';
 import { i32ToString } from 'zena:string-convert';
 import { Encoding, String } from 'zena:string';
-import { Memory } from 'zena:memory';
 import { newByteArray } from 'zena:byte-array';
 import { cabiRealloc } from '../../lib/zena/cabi/cabi.zena';
 import {
@@ -19,18 +18,8 @@ import {
   setSpanAttr,
   startSpan,
 } from '../../lib/zena/otel/otel.zena';
-
-@external('wasi:random/random@0.2.12', 'get-random-u64')
-declare function __getRandomU64(): i64;
-
-@external('wasi:cli/stdout@0.2.12', 'get-stdout')
-declare function __getStdout(): i32;
-
-@external('wasi:io/streams@0.2.12', '[method]output-stream.blocking-write-and-flush')
-declare function __bwaf(stream: i32, ptr: i32, len: i32, retptr: i32): void;
-
-let mem = Memory.default;
-let I63_MASK = 0x7FFFFFFFFFFFFFFF as i64;
+import { randomIndex } from '../../lib/zena/wasip2/random.zena';
+import { writeLine } from '../../lib/zena/wasip2/stdout.zena';
 
 // The host lowers current-span-context results through this export — entry
 // modules must declare it themselves (the pick.zena wrapper pattern).
@@ -60,21 +49,15 @@ smileys[6] = emoji(0x82); // 😂
 smileys[7] = emoji(0x8A); // 😊
 
 let printLine = (text: String): void => {
-  let len = text.length;
-  let ptr = cabiRealloc(0, 0, 1, len);
-  for (var i = 0; i < len; i += 1) {
-    mem.setU8(ptr + i, text.getByteAt(i));
-  }
-  let stream = __getStdout();
-  __bwaf(stream, ptr, len, ptr + len);
-  // no [resource-drop]: stdout is a long-lived host handle (p2-hello note)
+  // lib wasip2 stdout: no [resource-drop] — stdout is a long-lived host
+  // handle (see lib/zena/wasip2/stdout.zena).
+  writeLine(text);
 };
 
 /** Grandchild span: draw the smiley table index from wasi:random. */
 let drawIndex = (): i32 => {
   let span = startSpan('draw-index');
-  let random = __getRandomU64() & I63_MASK;
-  let index = (random % (smileys.length as i64)) as i32;
+  let index = randomIndex(smileys.length);
   endSpan(span);
   return index;
 };
@@ -100,6 +83,5 @@ export let run = (): void => {
   endSpan(pick);
 
   printLine(value);
-  printLine('\n');
   endSpan(root);
 };

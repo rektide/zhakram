@@ -4,15 +4,7 @@
 // (a p1 import would poison a p2-direct embedding). Linear memory comes from
 // zena:memory intrinsics, which export "memory" on any target.
 import { Memory } from 'zena:memory';
-
-@external("wasi:cli/stdout@0.2.12", "get-stdout")
-declare function __getStdout(): i32;
-
-@external("wasi:io/streams@0.2.12", "[method]output-stream.blocking-write-and-flush")
-declare function __bwaf(stream: i32, ptr: i32, len: i32, retptr: i32): void;
-
-@external("wasi:io/streams@0.2.12", "[resource-drop]output-stream")
-declare function __dropOutputStream(stream: i32): void;
+import { writeBytes } from '../../lib/zena/wasip2/stdout.zena';
 
 let mem = Memory.default;
 
@@ -23,11 +15,12 @@ export let run = (): void => {
     mem.setU8(ptr, b);
     ptr += 1;
   }
-  let stream = __getStdout();
-  __bwaf(stream, 16, bytes.length, 64);
+  writeBytes(16, bytes.length);
   // NOTE: no [resource-drop] — the browser preview2-shim's stdout dispose
   // path throws {tag:"closed"} after the write lands; stdout is a
   // long-lived host resource, so skipping the drop is both safe and
-  // standard guest practice for wasi:cli stdio handles.
+  // standard guest practice for wasi:cli stdio handles. lib/zena/wasip2/
+  // stdout.zena (which does not even declare the drop external) owns the
+  // full lesson.
 
 };
