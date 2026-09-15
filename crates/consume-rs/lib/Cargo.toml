@@ -1,0 +1,19 @@
+[package]
+name = "consume-rs"
+version = "0.1.0"
+edition = "2024"
+description = "rektide:interop/rng-reader component: read() draws 5 numbers via the imported rng interface"
+
+[lib]
+# cdylib: the wasm component. rlib: lets the command variant (../cmd) reuse draw_with.
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# `component` (default) emits the rng-reader component export (`read`). The
+# command variant turns it OFF: linking that export into a wasm32-wasip2
+# command collides with wasi libc's POSIX `read` symbol.
+default = ["component"]
+component = []
+
+[dependencies]
+wit-bindgen = "0.44.0"

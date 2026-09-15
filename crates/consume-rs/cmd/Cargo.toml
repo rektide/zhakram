@@ -1,0 +1,11 @@
+[package]
+name = "consume-rs-cmd"
+version = "0.1.0"
+edition = "2024"
+description = "rektide:interop/rng-reader-command: WASI P2 command printing 5 rng numbers to stdout"
+
+[dependencies]
+# default-features = false: skip the lib's `read` component export — linking it
+# into this command collides with wasi libc's POSIX `read` symbol.
+consume-rs = { path = "../lib", default-features = false }
+wit-bindgen = "0.44.0"
