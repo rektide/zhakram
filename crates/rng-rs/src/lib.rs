@@ -2,11 +2,13 @@
 //! (shared WIT: `examples/emoji-wit/wit/interop.wit`), exporting the
 //! `rektide:interop/rng` interface.
 //!
-//! `next()` returns pseudo-random small non-negative `s32` values from an
-//! xorshift64* PRNG with a **fixed seed** — deliberately deterministic: the
-//! rng-source/rng-reader pipeline is meant to compose reproducibly (see
-//! ../../examples/interop-static), so every run draws the same sequence:
-//! `1, 55, 92, 60, 90, ...`. The sequence still advances call to call.
+//! `next()` returns small `s32` values from an xorshift64* PRNG with a
+//! **fixed seed** — deliberately deterministic: the rng-source/rng-reader
+//! pipeline is meant to compose reproducibly (see
+//! ../../examples/interop-static), so every run draws the same sequence
+//! (verified end-to-end: `49, -56, -78, 34, 80`). The sequence still advances
+//! call to call. Note the `as i32` cast before the `% 100` wraps: draws can
+//! be negative.
 //!
 //! Build (see ../../examples/interop-static/build.sh):
 //!   cargo build --target wasm32-wasip2 --release
