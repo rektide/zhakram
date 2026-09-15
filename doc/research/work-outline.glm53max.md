@@ -65,7 +65,8 @@ zena-jco/
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
 | F5 | fork: export-name mangling for interface exports | ✅ **done + verified** — `@exportName` decorator (fork tsumxvov) + matrix `rng-source-both` world; matrix now **10 pass / 0 skip / 2 n-a / 0 fail**, incl. wac-fused zena→zena static composition | — |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
-| W7 | p3 frontier characterization | not started; telemetry/wasi-otel explored in [`jco-telemetry.glm53flash.md`](jco-telemetry.glm53flash.md) | — |
+| W7 | p3 frontier characterization | ✅ **done** — [`p3-frontier.solmax.md`](p3-frontier.solmax.md): decisive experiment (real zena WasmGC module, live GC ref across a JSPI-suspending host call, async WIT + sync canon) green in Node 26 + unflagged Chrome 150; **corrects** jco-host's "JSPI has fallbacks" (it's a hard dep) and "Chrome flag-gated" (shipped in 137) | — |
+| F3 | fork: async/JSPI-first host | **bounded GO** per p3-frontier: first slice = zena async syntax/typing + linear JSPI lowering + custom Promise host imports, staying on p2 shims; wasmtime-p3 + native callback ABI = second driver. preview3-shim browser build is a skeleton (random-only); Firefox 152 lacks JSPI | W7 |
 
 ### W1 — p2-direct zena host kit
 
