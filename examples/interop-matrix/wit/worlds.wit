@@ -1,0 +1,30 @@
+// Worlds for the zena entries of the interop matrix
+// (examples/interop-matrix). The rng interface is a verbatim copy of the
+// contract in examples/emoji-wit/wit/interop.wit; the worlds are "flat"
+// variants designed around what a zena core module can express:
+//
+//   - zena cannot emit the mangled core export name that an *interface*
+//     export requires (`rektide:interop/rng@0.1.0#next`), so the zena
+//     generator exports a world-level `next` function instead.
+//   - importing the interface *is* expressible (module name is the plain
+//     qualified interface name, exactly like the wasi p2-direct externals),
+//     so the zena consumer imports the real interface.
+package rektide:interop@0.1.0;
+
+interface rng {
+  next: func() -> s32;
+}
+
+/// Flat variant of `rng-source`: the same rng, exported as a world-level
+/// function so a zena guest (export name `next`) can satisfy it.
+world rng-source-flat {
+  export next: func() -> s32;
+}
+
+/// Flat variant of `rng-reader`: imports the real rng interface, exports
+/// `read` as a world-level function (string result via the indirect
+/// canonical ABI — see lib/zena/cabi).
+world rng-reader-flat {
+  import rng;
+  export read: func() -> string;
+}

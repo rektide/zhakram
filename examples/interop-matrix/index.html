@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>interop-matrix jshost cells under jco, in the browser</title>
+<script type="importmap">
+{
+  "imports": {
+    "@bytecodealliance/preview2-shim/cli": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/cli.js",
+    "@bytecodealliance/preview2-shim/io": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/io.js",
+    "@bytecodealliance/preview2-shim/random": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/random.js"
+  }
+}
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  // Browser rerun of the matrix's jshost cells: both generators × both
+  // component consumers via explicit instantiation (-I outputs), plus the
+  // js-consumer cells (host draws directly). Expected sequences mirror
+  // run.mjs: rust xorshift64* fixed seed, zena xorshift64 seed 42 model.
+  const RUST_SEQ = [49, -56, -78, 34, 80];
+  function zenaModelSeq(count = 5) {
+    const M64 = (1n << 64n) - 1n;
+    let s = 42n;
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      s ^= (s << 13n) & M64;
+      s ^= s >> 7n;
+      s ^= (s << 17n) & M64;
+      out.push(Number(BigInt.asIntN(32, s & 0xffffffffn)) % 100);
+    }
+    return out;
+  }
+  const expected = { rust: RUST_SEQ.join(','), zena: zenaModelSeq().join(',') };
+
+  const el = document.getElementById('status');
+  try {
+    const [cli, io] = await Promise.all([
+      import('@bytecodealliance/preview2-shim/cli'),
+      import('@bytecodealliance/preview2-shim/io'),
+    ]);
+    const wasiImports = {
+      'wasi:cli/environment': cli.environment,
+      'wasi:cli/exit': cli.exit,
+      'wasi:cli/stderr': cli.stderr,
+      'wasi:cli/stdin': cli.stdin,
+      'wasi:cli/stdout': cli.stdout,
+      'wasi:cli/terminal-input': cli.terminalInput,
+      'wasi:cli/terminal-output': cli.terminalOutput,
+      'wasi:cli/terminal-stdin': cli.terminalStdin,
+      'wasi:cli/terminal-stdout': cli.terminalStdout,
+      'wasi:cli/terminal-stderr': cli.terminalStderr,
+      'wasi:io/error': io.error,
+      'wasi:io/poll': io.poll,
+      'wasi:io/streams': io.streams,
+    };
+
+    const rows = [];
+    for (const gen of ['rust', 'zena']) {
+      const genMod = gen === 'rust'
+        ? await import('./build/rng-rs-out/rng_rs.js')
+        : await import('./build/rng-zena-out/rng-zena.component.js');
+
+      for (const consumer of ['rust', 'zena', 'js']) {
+        // fresh instantiation per cell: fresh linear memory → fresh PRNG
+        // state → the full expected sequence in every cell
+        const genInst = await genMod.instantiate();
+        const next = gen === 'rust' ? genInst.rng.next : genInst.next;
+        let out;
+        if (consumer === 'js') {
+          out = [next(), next(), next(), next(), next()].join(',');
+        } else if (consumer === 'rust') {
+          const m = await import('./build/consume-rs-out/consume_rs.js');
+          const inst = await m.instantiate(undefined, {
+            ...wasiImports,
+            'rektide:interop/rng': { next },
+          });
+          out = inst.read();
+        } else {
+          const m = await import('./build/consume-zena-out/consume-zena.component.js');
+          const inst = await m.instantiate(undefined, { 'rektide:interop/rng': { next } });
+          out = inst.read();
+        }
+        rows.push([`${gen}→${consumer} jshost`, out === expected[gen] ? 'ok' : `FAIL ${out}`]);
+      }
+    }
+    const failed = rows.filter(([, r]) => r !== 'ok');
+    el.textContent = (failed.length ? 'INTEROP-MATRIX-BROWSER-FAIL: ' : 'INTEROP-MATRIX-BROWSER-OK: ')
+      + rows.map(([c, r]) => `${c}=${r}`).join(' | ');
+  } catch (e) {
+    let detail;
+    try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch { detail = String(e); }
+    el.textContent = 'INTEROP-MATRIX-BROWSER-ERROR: ' + detail;
+  }
+  document.title = el.textContent;
+</script>
+</body>

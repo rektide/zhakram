@@ -1,0 +1,32 @@
+// rng-zena — the zena generator for the interop matrix.
+//
+// Implements `rektide:interop/rng-source-flat@0.1.0`: a world-level `next`
+// export returning small deterministic s32 values. Same role as
+// crates/rng-rs, same xorshift64 family, but seeded 42 and kept in pure zena
+// (no external imports at all — state lives in linear memory).
+//
+// Algorithm (mirrored by the BigInt model in run.mjs):
+//   state ^= state << 13   (mod 2^64)
+//   state ^= state >>> 7   (logical shift)
+//   state ^= state << 17   (mod 2^64)
+//   return int32(state & 0xffffffff) % 100   (signed remainder)
+//
+// Memory is zero-initialized, so a zero state means "first call" — seed 42.
+// xorshift64 never reaches zero from a nonzero state.
+import { Memory } from 'zena:memory';
+
+let mem = Memory.default;
+
+let STATE_ADDR = 16;
+
+export let next = (): i32 => {
+  var x = mem.getI64(STATE_ADDR);
+  if (x == (0 as i64)) {
+    x = 42;
+  }
+  x = x ^ (x << (13 as i64));
+  x = x ^ (x >>> (7 as i64));
+  x = x ^ (x << (17 as i64));
+  mem.setI64(STATE_ADDR, x);
+  return ((x & (0xFFFFFFFF as i64)) as i32) % 100;
+};

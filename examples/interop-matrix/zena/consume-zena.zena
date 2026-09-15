@@ -1,0 +1,74 @@
+// consume-zena — the zena consumer for the interop matrix.
+//
+// Implements `rektide:interop/rng-reader-flat@0.1.0`: imports the real
+// `rektide:interop/rng@0.1.0` interface (core-level module name is the plain
+// qualified interface name, same lowering as the wasi p2-direct externals),
+// draws 5 numbers, and returns them comma-separated as a string via the
+// indirect canonical ABI from lib/zena/cabi (the emoji-zena pattern).
+//
+// Numbers drawn are in [-99, 99] (both generators use `% 100` on an s32), so
+// decimal formatting is done with a bounded subtraction loop — no division.
+import { newByteArray } from 'zena:byte-array';
+import { Encoding, String } from 'zena:string';
+import {
+  cabiRealloc,
+  freeStringIndirect,
+  lowerStringIndirect,
+} from '../../../lib/zena/cabi/cabi.zena';
+
+@external('rektide:interop/rng@0.1.0', 'next')
+declare function __rngNext(): i32;
+
+// Canonical ABI exports must be declared by the entry module: zena cannot
+// re-export an imported declaration under a different core export name.
+export let cabi_realloc = (
+  oldPtr: i32,
+  oldSize: i32,
+  align: i32,
+  newSize: i32
+): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
+
+// Append the decimal form of n (|n| <= 99) to bytes at pos; return the new
+// position.
+let writeNum = (bytes: ByteArray, pos: i32, n: i32): i32 => {
+  var p = pos;
+  var v = n;
+  if (v < 0) {
+    bytes[p] = 45; // '-'
+    p += 1;
+    v = 0 - v;
+  }
+  // tens by bounded subtraction (v <= 99, so at most 9 subtractions)
+  var tens = 0;
+  for (var i = 0; i < 9; i += 1) {
+    if (v >= 10) {
+      v -= 10;
+      tens += 1;
+    }
+  }
+  if (tens > 0) {
+    bytes[p] = 48 + tens;
+    p += 1;
+  }
+  bytes[p] = 48 + v;
+  return p + 1;
+};
+
+export let read = (): i32 => {
+  let bytes = newByteArray(32);
+  var pos = 0;
+  for (var i = 0; i < 5; i += 1) {
+    if (i > 0) {
+      bytes[pos] = 44; // ','
+      pos += 1;
+    }
+    pos = writeNum(bytes, pos, __rngNext());
+  }
+  let value = String.fromByteArray(bytes, 0, pos, Encoding.WTF8);
+  // string results use the indirect form: one i32 pointing at (ptr, len)
+  return lowerStringIndirect(value);
+};
+
+export let cabi_post_read = (area: i32): void => {
+  freeStringIndirect(area);
+};
