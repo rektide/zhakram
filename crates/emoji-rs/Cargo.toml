@@ -1,0 +1,11 @@
+[package]
+name = "emoji-rs"
+version = "0.1.0"
+edition = "2024"
+description = "rektide:zena-jco/emoji-picker component: pick() returns a random smiley"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.44.0"
