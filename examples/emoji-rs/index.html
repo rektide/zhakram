@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>emoji-rs under jco, in the browser</title>
+<script type="importmap">
+{
+  "imports": {
+    "@bytecodealliance/preview2-shim/cli": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/cli.js",
+    "@bytecodealliance/preview2-shim/io": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/io.js",
+    "@bytecodealliance/preview2-shim/random": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/random.js"
+  }
+}
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  const el = document.getElementById('status');
+  try {
+    const m = await import('./out/emoji_rs.js');
+    const picks = [m.pick(), m.pick(), m.pick()];
+    el.textContent = picks.every((s) => typeof s === 'string' && s.length > 0)
+      ? 'EMOJI-RS-BROWSER-OK: ' + picks.join(' ')
+      : 'EMOJI-RS-BROWSER-FAIL: ' + JSON.stringify(picks);
+  } catch (e) {
+    let detail;
+    try { detail = JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch { detail = String(e); }
+    el.textContent = 'EMOJI-RS-BROWSER-ERROR: ' + detail;
+  }
+  document.title = el.textContent;
+</script>
+</body>
