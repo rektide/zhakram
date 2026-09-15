@@ -63,7 +63,7 @@ zena-jco/
 | W5 | `packages/` pipeline tooling | not started; pipeline proven as shell scripts | W1–W3 stabilizing |
 | F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0. 2nd fork fix landed 2026-09-15 (`--dce` intrinsic-family cull — see findings log) | — |
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
-| F5 | fork: export-name mangling for interface exports | **new candidate (2026-09-15)** — zena cannot satisfy interface exports (`component new` needs core export `rektide:interop/rng@0.1.0#next`; zena export names are identifiers). Flat world-level exports and interface *imports* both work. An export-naming decorator closes the two static-composition skip cells | — |
+| F5 | fork: export-name mangling for interface exports | ✅ **done + verified** — `@exportName` decorator (fork tsumxvov) + matrix `rng-source-both` world; matrix now **10 pass / 0 skip / 2 n-a / 0 fail**, incl. wac-fused zena→zena static composition | — |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
 | W7 | p3 frontier characterization | not started; telemetry/wasi-otel explored in [`jco-telemetry.glm53flash.md`](jco-telemetry.glm53flash.md) | — |
 
