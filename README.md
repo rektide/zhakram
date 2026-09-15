@@ -1,4 +1,6 @@
-# zena-jco
+# jcona
+
+> experiments and tools around zena wasm programming language and jco
 
 Hosting [zena-language](https://github.com/rektide/zena-language) (and sibling)
 programs as WebAssembly components on
@@ -14,13 +16,13 @@ counterparts for the example worlds build green in [`crates/`](/crates/README.md
 
 ## Layout
 
-| Path | What |
-| --- | --- |
-| [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts) |
-| [`crates/`](/crates/README.md) | Rust guest code implementing the example worlds |
-| `lib/` | zena guest libraries — planned: `lib/zena/cabi` canonical ABI, `lib/zena/wasip2` p2-direct bindings, `lib/zena/otel` later |
-| `packages/` | host-side TS tooling — planned |
-| [`doc/research/`](/doc/README.md) | research notes + plan of record |
+| Path                               | What                                                                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts)                                                                         |
+| [`crates/`](/crates/README.md)     | Rust guest code implementing the example worlds                                                                            |
+| `lib/`                             | zena guest libraries — planned: `lib/zena/cabi` canonical ABI, `lib/zena/wasip2` p2-direct bindings, `lib/zena/otel` later |
+| `packages/`                        | host-side TS tooling — planned                                                                                             |
+| [`doc/research/`](/doc/README.md)  | research notes + plan of record                                                                                            |
 
 ## Docs
 
