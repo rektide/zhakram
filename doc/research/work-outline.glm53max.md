@@ -56,15 +56,15 @@ zena-jco/
 
 | ID | Workstream | Status | Depends on |
 | --- | --- | --- | --- |
-| W1 | p2-direct zena host kit | WAT guest ✅ green ("hello p2" in Node); **zena leg blocked on F1** | F1 |
-| W2 | emoji trio | WIT+Rust in flight (agent); zena leg awaits W3 | W3, F1 |
+| W1 | p2-direct zena host kit | ✅ **green Node + browser** ("hello p2" via wasi:cli/stdout, no WAT surgery) | F1 |
+| W2 | emoji trio | WIT+Rust partially staged (agent died to quota; crates/emoji-rs, rng-rs, consume-rs + examples/emoji-wit exist unverified); zena leg awaits W3 | W3, F1 |
 | W3 | `lib/cabi.zena` — canonical ABI in zena source | not started; design known (zena-targets §5) | — |
-| W4 | interop trio (jshost / static / matrix) | jshost seeded; static in flight (agent); matrix after parts | W1, W2 |
+| W4 | interop trio (jshost / static / matrix) | jshost: p2-direct proofs green (WAT + zena); static unstarted; matrix after parts | W1, W2 |
 | W5 | `packages/` pipeline tooling | not started; pipeline proven as shell scripts | W1–W3 stabilizing |
-| F1 | fork: type-identity fix (preRec generalization) | **G agent working now** — unblocks W1 zena leg + kills E2 WAT hack | — |
+| F1 | fork: type-identity fix (preRec generalization) | ✅ **done + committed** — flat-ABI imports + exported entry points get standalone types; compiler suite fail 0 | — |
 | F2 | fork: `--target component` | designed sketch; decide after F1 | F1 |
 | F3 | fork: async/JSPI-first host | strategy decision with evidence | W7 |
-| W7 | p3 frontier characterization | not started | — |
+| W7 | p3 frontier characterization | not started; telemetry/wasi-otel explored in [`jco-telemetry.glm53flash.md`](jco-telemetry.glm53flash.md) | — |
 
 ### W1 — p2-direct zena host kit
 
@@ -185,5 +185,23 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## In flight right now
 
-- Rust leg (emoji-wit, emoji-rs, rng-rs, consume-rs, interop-static) — background agent.
-- Fork F1 type-identity fix — G agent.
+- Rust leg (emoji-wit, emoji-rs, rng-rs, consume-rs, interop-static) —
+  interrupted by plan usage limits; crates + emoji-wit staged unverified in
+  the working copy, awaiting completion/verification (agent relaunch or
+  hands-on) once quota resets.
+- Fork F1: **done and committed** (2026-09-15) — pre-rec types for flat-ABI
+  imports and exported entry points; both failure repros pass without WAT
+  surgery; `@zena-lang/compiler` suite fail 0.
+
+## Findings log (newest first)
+
+- **2026-09-15 — browser shim quirk**: preview2-shim *browser* build throws
+  `{tag:"closed"}` when a guest `[resource-drop]s` the stdout output-stream
+  after writing; the Node build does not. `get-stdout` returns an owned
+  handle so the drop is legal guest behavior — candidate upstream
+  preview2-shim issue. Workaround in our guests: don't drop process-lifetime
+  stdio handles. (Found via `examples/interop-jshost` browser run.)
+- **2026-09-15 — p2-direct contract verified in zena**: a zena `--dce`
+  host-target module with inline `@external("wasi:…@version", "…")`
+  declarations embeds and runs under jco in Node **and** browser once the
+  fork type-identity fix (F1) is in.

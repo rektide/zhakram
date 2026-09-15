@@ -25,5 +25,9 @@ export let run = (): void => {
   }
   let stream = __getStdout();
   __bwaf(stream, 16, bytes.length, 64);
-  __dropOutputStream(stream);
+  // NOTE: no [resource-drop] — the browser preview2-shim's stdout dispose
+  // path throws {tag:"closed"} after the write lands; stdout is a
+  // long-lived host resource, so skipping the drop is both safe and
+  // standard guest practice for wasi:cli stdio handles.
+
 };
