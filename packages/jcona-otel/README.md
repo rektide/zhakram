@@ -14,6 +14,10 @@ values, already lifted), so this package is deliberately small:
   depth indent). A sink receives the full `SpanData` + computed
   `depth`/`durationUs` — everything an OTLP exporter needs — so an OTLP sink
   can slot in without touching guests.
+- **Sinks compose with host observation.** The original `{ onSpan(ended) }`
+  shape remains supported. `createTracing` also accepts jcona-observe's generic
+  `{ emit(event) }` `EventSink`, so one sink can render guest spans and host
+  dispatch/resource events in their real interleaving.
 - **Runtime hosts**: Node imports `./src/index.ts` directly (node
   type-stripping); browsers import the tsdown bundle
   (`pnpm build` → `dist/tracing.mjs`) via an import-map entry — see

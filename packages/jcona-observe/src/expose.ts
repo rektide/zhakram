@@ -10,6 +10,7 @@ const EXPECTED_DECLARATIONS = [
 	['ASYNC_TASKS_BY_COMPONENT_IDX', /\bconst ASYNC_TASKS_BY_COMPONENT_IDX = new Map\(\);/g],
 	['ASYNC_STATE', /\bconst ASYNC_STATE = new Map\(\);/g],
 	['INSTANCE_FLAGS', /\bconst INSTANCE_FLAGS = new Map\(\);/g],
+	['HANDLE_TABLES', /\bconst HANDLE_TABLES\s*=\s*\[\];/g],
 ] as const;
 
 export interface ResourceExposureResult {
@@ -63,6 +64,33 @@ function __jconaObserveSnapshotMap(map) {
       key: __jconaObserveSummarize(key),
       value: __jconaObserveSummarize(value),
     })),
+  };
+}
+
+function __jconaObserveSnapshotHandleTable(table, tableIndex) {
+  const flag = 1 << 30;
+  const entries = [];
+  for (let handle = 1; handle < table.length / 2; handle++) {
+    const scope = table[handle << 1];
+    const encodedRep = table[(handle << 1) + 1];
+    if ((scope & flag) !== 0 || encodedRep === 0) {
+      entries.push({ handle, state: 'free', next: scope & ~flag });
+    } else {
+      entries.push({
+        handle,
+        state: 'live',
+        scope,
+        rep: encodedRep & ~flag,
+        own: (encodedRep & flag) !== 0,
+      });
+    }
+  }
+  return {
+    tableIndex,
+    componentIdx: table._componentIdx,
+    freeHead: table[0] & ~flag,
+    createdReps: [...table._createdReps],
+    entries,
   };
 }
 
@@ -132,13 +160,23 @@ export function transformResourceExposure(source: string): ResourceExposureResul
 
 	transformed = transformed.replace(
 		/^([ \t]*)const INSTANCE_FLAGS = new Map\(\);/m,
-		(_match, indent: string) => `${indent}const INSTANCE_FLAGS = new Map();\n${indent}__jconaObserveRegisterResourceView(() => ({\n`
+		(_match, indent: string) => `${indent}const INSTANCE_FLAGS = new Map();\n`
+			+ `${indent}const __jconaObserveCaptureTables = Object.create(null);\n`
+			+ `${indent}__jconaObserveRegisterResourceView(() => ({\n`
 			+ `${indent}  resourceScopeId: RESOURCE_SCOPE_ID,\n`
 			+ `${indent}  resourceScopeTasks: __jconaObserveSnapshotMap(RESOURCE_SCOPE_TASKS),\n`
 			+ `${indent}  asyncTasksByComponentIdx: __jconaObserveSnapshotMap(ASYNC_TASKS_BY_COMPONENT_IDX),\n`
 			+ `${indent}  asyncState: __jconaObserveSnapshotMap(ASYNC_STATE),\n`
 			+ `${indent}  instanceFlags: __jconaObserveSnapshotMap(INSTANCE_FLAGS),\n`
+			+ `${indent}  handleTables: HANDLE_TABLES.map(__jconaObserveSnapshotHandleTable),\n`
+			+ `${indent}  captureTables: Object.fromEntries(Object.entries(__jconaObserveCaptureTables)\n`
+			+ `${indent}    .map(([name, table]) => [name, __jconaObserveSnapshotMap(table)])),\n`
 			+ `${indent}}));`,
+	);
+	transformed = transformed.replace(
+		/^([ \t]*)(const (captureTable\d+)\s*=\s*new Map\(\);)/gm,
+		(_match, indent: string, declaration: string, name: string) =>
+			`${indent}${declaration}\n${indent}__jconaObserveCaptureTables.${name} = ${name};`,
 	);
 	transformed = transformed.replace(
 		/export const _util = \{/,

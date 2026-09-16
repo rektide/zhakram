@@ -10,6 +10,13 @@ export function instantiate() {
   const ASYNC_TASKS_BY_COMPONENT_IDX = new Map();
   const ASYNC_STATE = new Map();
   const INSTANCE_FLAGS = new Map();
+  const HANDLE_TABLES = [];
+  const handleTable0 = [1 << 30, 0, 0, 7 | (1 << 30)];
+  handleTable0._createdReps = new Set([7]);
+  handleTable0._componentIdx = 0;
+  HANDLE_TABLES[0] = handleTable0;
+  const captureTable0 = new Map();
+  captureTable0.set(7, { kind: 'stream' });
   RESOURCE_SCOPE_ID++;
   RESOURCE_SCOPE_TASKS.set(RESOURCE_SCOPE_ID, { task: 'live' });
   INSTANCE_FLAGS.set(0, new WebAssembly.Global({ value: 'i32', mutable: true }, 1));
@@ -33,6 +40,10 @@ test('injects a per-instantiation, immutable _util snapshot view', async () => {
 	assert.equal(snapshot.instances[0].resourceScopeId, 1);
 	assert.equal(snapshot.instances[0].resourceScopeTasks.size, 1);
 	assert.equal(snapshot.instances[0].instanceFlags.entries[0].value.value, 1);
+	assert.deepEqual(snapshot.instances[0].handleTables[0].entries, [
+		{ handle: 1, state: 'live', scope: 0, rep: 7, own: true },
+	]);
+	assert.equal(snapshot.instances[0].captureTables.captureTable0.size, 1);
 	assert.ok(Object.isFrozen(snapshot));
 	assert.ok(Object.isFrozen(snapshot.instances));
 });

@@ -23,8 +23,10 @@ frontier is a **bounded GO** per
 | [`lib/zena/`](/lib/zena/README.md) | zena guest libraries: `cabi` (canonical ABI alloc + string lift/lower), `wasip2` (p2-direct stdout/random/clocks wrappers), `otel` (spans) |
 | [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts, Node + browser runs) |
 | [`crates/`](/crates/README.md) | Rust guest twins for the example worlds |
+| [`packages/`](/packages/README.md) | workspace package index |
 | [`packages/jcona/`](/packages/jcona/README.md) | the pipeline CLI: `jcona build / transpile / run / serve` over zena → wasm-tools → jco |
 | [`packages/jcona-otel/`](/packages/jcona-otel/README.md) | `wasi:otel/tracing` JS host: span stack + pluggable sink |
+| [`packages/jcona-observe/`](/packages/jcona-observe/README.md) | pure-JS WASI/resource dispatch observation + guarded jco runtime-table snapshots |
 | [`doc/research/`](/doc/README.md) | research notes + plan of record |
 
 ## Quickstart (jcona CLI)
@@ -41,7 +43,8 @@ cd examples/emoji-zena
 ../../node_modules/.bin/jcona run out --call pick --repeat 3   # 😃 😄 😁
 ```
 
-Or just run an example's script — `./run.sh` (emoji-zena, otel-zena),
+Or just run an example's script — `./run.sh` (emoji-zena, otel-zena,
+observe-zena),
 `node run.mjs` (interop-matrix) — each verifies Node and browser.
 
 Raw pipeline + the verified p2-direct contract (import module names,

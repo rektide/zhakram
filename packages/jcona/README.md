@@ -11,7 +11,7 @@ node 26 type-stripping):
 ```text
 jcona build <src.zena> --world <ns:pkg/world@ver> --wit <dir> [-o out.component.wasm]
        [--rust-artifact <wasm>]
-jcona transpile <component.wasm> [-o dir] [--name name] [-- <extra jco args…>]
+jcona transpile <component.wasm> [-o dir] [--name name] [--expose-resources] [-- <extra jco args…>]
 jcona run <dir|component.wasm> [--call export] [--repeat n]
 jcona serve <dir> [--port n] [--check page.html]
 ```
@@ -25,7 +25,7 @@ drive the pipeline programmatically — the
 | Command | What it does |
 | --- | --- |
 | `build` | zena build `--dce` → `wasm-tools component embed` → `component new`. Intermediates land next to the output with the stage-suffix convention: `emoji.core.wasm`, `emoji.embed.wasm`, `emoji.component.wasm`. `--rust-artifact <wasm>` skips the zena/embed/new stages and passes the prebuilt component through (copied to `-o` when given), so rust legs (`cargo build --target wasm32-wasip2`) share the same build → transpile → run shape. |
-| `transpile` | wraps `jco transpile --bindgen-enable-wasm-exnref`. Default out dir `<stem>-out` next to the component; default output name strips a `.component` infix, so `emoji.component.wasm` yields `emoji.js` (jco raw would emit `emoji.component.js`). Extra args after `--` pass through to jco (e.g. `-I async` for the host-mediated-composition mode). |
+| `transpile` | wraps `jco transpile --bindgen-enable-wasm-exnref`. Default out dir `<stem>-out` next to the component; default output name strips a `.component` infix, so `emoji.component.wasm` yields `emoji.js` (jco raw would emit `emoji.component.js`). Extra args after `--` pass through to jco (e.g. `-I async` for the host-mediated-composition mode). `--expose-resources` runs jcona-observe's guarded jco-1.33 transform and adds `_util.resourceTables.snapshot()`; unknown shapes warn and remain unchanged. |
 | `run` | imports a transpiled dir (its single top-level `.js` entry) or a component (transpiled first into a `.<stem>-run` scratch dir). Default invocation is the `wasi:cli/run` export — for command components. `--call pick` resolves any export shape: a world-level function (`m.pick`), a bare interface alias (`m.run.run`), or the fully-qualified interface (`m['wasi:cli/run@0.2.0'].run`). Results print one per `--repeat`, space-separated, on one line. |
 | `serve` | static server with correct MIME for ES modules/wasm (import-map pages need this), port 8232 by default. `--check page.html` loads the page in headless Chrome and prints its `#status` text once it stops saying `loading…` (the convention every example `index.html` follows), exiting non-zero on FAIL/ERROR statuses. |
 

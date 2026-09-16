@@ -1,0 +1,87 @@
+// observe-zena demo: the otel guest shape plus stdout/random resource activity.
+//
+// Span tree (host sink prints each line as on-end fires):
+//   emoji-demo            (root; attr example=otel-zena)
+//   └─ pick-emoji
+//      ├─ draw-index      (grandchild — proves current-span-context nesting)
+//      └─ render-emoji    (attr index=N)
+//
+// Uses lib/zena/otel (hand-lowered wasi:otel/tracing@0.2.0-rc.2) for spans
+// and lib/zena/wasip2 for the stdout line + random draw.
+import { FixedArray } from 'zena:fixed-array';
+import { i32ToString } from 'zena:string-convert';
+import { Encoding, String } from 'zena:string';
+import { newByteArray } from 'zena:byte-array';
+import { cabiRealloc } from '../../lib/zena/cabi/cabi.zena';
+import {
+  endSpan,
+  setSpanAttr,
+  startSpan,
+} from '../../lib/zena/otel/otel.zena';
+import { randomIndex } from '../../lib/zena/wasip2/random.zena';
+import { writeLine } from '../../lib/zena/wasip2/stdout.zena';
+
+// The host lowers current-span-context results through this export — entry
+// modules must declare it themselves (the pick.zena wrapper pattern).
+export let cabi_realloc = (
+  oldPtr: i32,
+  oldSize: i32,
+  align: i32,
+  newSize: i32
+): i32 => cabiRealloc(oldPtr, oldSize, align, newSize);
+
+let emoji = (lastByte: i32): ByteArray => {
+  let bytes = newByteArray(4);
+  bytes[0] = 0xF0;
+  bytes[1] = 0x9F;
+  bytes[2] = 0x98;
+  bytes[3] = lastByte;
+  return bytes;
+};
+
+let smileys = new FixedArray<ByteArray>(8, emoji(0x80));
+smileys[1] = emoji(0x83); // 😃
+smileys[2] = emoji(0x84); // 😄
+smileys[3] = emoji(0x81); // 😁
+smileys[4] = emoji(0x86); // 😆
+smileys[5] = emoji(0x85); // 😅
+smileys[6] = emoji(0x82); // 😂
+smileys[7] = emoji(0x8A); // 😊
+
+let printLine = (text: String): void => {
+  // lib wasip2 stdout: no [resource-drop] — stdout is a long-lived host
+  // handle (see lib/zena/wasip2/stdout.zena).
+  writeLine(text);
+};
+
+/** Grandchild span: draw the smiley table index from wasi:random. */
+let drawIndex = (): i32 => {
+  let span = startSpan('draw-index');
+  let index = randomIndex(smileys.length);
+  endSpan(span);
+  return index;
+};
+
+/** Child span: build the emoji string for the drawn index. */
+let renderEmoji = (index: i32): String => {
+  let span = startSpan('render-emoji');
+  setSpanAttr(span, 'index', i32ToString(index));
+  let bytes = smileys[index];
+  let value = String.fromByteArray(bytes, 0, bytes.length, Encoding.WTF8);
+  endSpan(span);
+  return value;
+};
+
+export let run = (): void => {
+  let root = startSpan('emoji-demo');
+  setSpanAttr(root, 'example', 'observe-zena');
+
+  let pick = startSpan('pick-emoji');
+  let index = drawIndex();
+  let value = renderEmoji(index);
+  setSpanAttr(pick, 'emoji', value);
+  endSpan(pick);
+
+  printLine(value);
+  endSpan(root);
+};

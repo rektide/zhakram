@@ -1,0 +1,83 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>observe-zena: loading</title>
+<script type="importmap">
+  {
+    "imports": {
+      "@bytecodealliance/preview2-shim/cli": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/cli.js",
+      "@bytecodealliance/preview2-shim/clocks": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/clocks.js",
+      "@bytecodealliance/preview2-shim/io": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/io.js",
+      "@bytecodealliance/preview2-shim/random": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/random.js",
+      "jcona-observe/observe": "/packages/jcona-observe/dist/observe.mjs",
+      "jcona-otel/tracing": "/packages/jcona-otel/dist/tracing.mjs"
+    }
+  }
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  const el = document.getElementById('status');
+  try {
+    const [cli, clocks, io, random, observation, otel] = await Promise.all([
+      import('@bytecodealliance/preview2-shim/cli'),
+      import('@bytecodealliance/preview2-shim/clocks'),
+      import('@bytecodealliance/preview2-shim/io'),
+      import('@bytecodealliance/preview2-shim/random'),
+      import('jcona-observe/observe'),
+      import('jcona-otel/tracing'),
+    ]);
+
+    const spans = [];
+    const hostEvents = [];
+    const sink = {
+      emit(event) {
+        if ('span' in event) {
+          const line = otel.formatSpanLine(event);
+          spans.push(line);
+          console.log(line);
+        } else {
+          hostEvents.push(event);
+          if (event.type !== 'call-start') console.log(observation.formatObservationLine(event));
+        }
+      },
+    };
+    const imports = observation.observe({
+      'wasi:otel/tracing': otel.createTracing({ sink }),
+      'wasi:clocks/wall-clock': clocks.wallClock,
+      'wasi:random/random': random.random,
+      'wasi:cli/stdout': cli.stdout,
+      'wasi:io/streams': io.streams,
+      'wasi:io/error': io.error,
+    }, { sink });
+
+    const component = await import('./build/observe-demo-out/observe-demo.js');
+    const instance = await component.instantiate(undefined, imports);
+    instance.run();
+    const summary = observation.observationSummary(imports);
+    const tables = component._util.resourceTables.snapshot();
+    const completed = hostEvents
+      .filter((event) => event.type === 'call-end')
+      .map((event) => event.function);
+    const liveHandles = tables.instances
+      .flatMap((entry) => entry.handleTables)
+      .flatMap((table) => table.entries)
+      .filter((entry) => entry.state === 'live').length;
+    const ok = spans.length === 4
+      && completed.includes('get-random-u64')
+      && completed.includes('get-stdout')
+      && completed.includes('[method]output-stream.blocking-write-and-flush')
+      && summary.totals.resourceCalls >= 1
+      && summary.totals.inFlight === 0
+      && tables.instances.length === 1
+      && liveHandles >= 1;
+    console.log('resource summary', summary);
+    console.log('table snapshot', tables);
+    el.textContent = `${ok ? 'OBSERVE-ZENA-BROWSER-OK' : 'OBSERVE-ZENA-BROWSER-FAIL'}: spans=${spans.length} hostCalls=${summary.totals.calls} resourceCalls=${summary.totals.resourceCalls} liveHandles=${liveHandles} tableInstances=${tables.instances.length}`;
+  } catch (error) {
+    let detail;
+    try { detail = JSON.stringify(error, Object.getOwnPropertyNames(error)); }
+    catch { detail = String(error); }
+    el.textContent = `OBSERVE-ZENA-BROWSER-ERROR: ${detail}`;
+  }
+  document.title = el.textContent;
+</script>
