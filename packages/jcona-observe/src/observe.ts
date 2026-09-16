@@ -11,6 +11,7 @@ export type ValueSummary =
 	| { type: 'string'; length: number; preview: string }
 	| { type: 'bytes'; class: string; length: number; preview: number[] }
 	| { type: 'array'; length: number; items: ValueSummary[] }
+	| { type: 'circular' }
 	| { type: 'resource'; class: string; id: number }
 	| { type: 'error'; class: string; message: string }
 	| { type: 'function'; name: string }
@@ -151,8 +152,17 @@ function isRecordLike(value: unknown): value is object {
 	return proto === Object.prototype || proto === null || Array.isArray(value);
 }
 
-/** JSON-safe, bounded rendering for event arguments and results. */
-export function summarize(value: unknown, resourceMeta?: WeakMap<object, ResourceMeta>): ValueSummary {
+/** JSON-safe, bounded rendering for values outside an observation session. */
+export function summarize(value: unknown): ValueSummary {
+	return summarizeValue(value);
+}
+
+function summarizeValue(
+	value: unknown,
+	resourceMeta?: WeakMap<object, ResourceMeta>,
+	seen = new WeakSet<object>(),
+	depth = 0,
+): ValueSummary {
 	if (value === null || typeof value === 'boolean') return value;
 	if (typeof value === 'undefined') return { type: 'undefined' };
 	if (typeof value === 'bigint') return { type: 'bigint', value: value.toString() };
@@ -194,10 +204,14 @@ export function summarize(value: unknown, resourceMeta?: WeakMap<object, Resourc
 		};
 	}
 	if (Array.isArray(value)) {
+		if (seen.has(value)) return { type: 'circular' };
+		seen.add(value);
 		return {
 			type: 'array',
 			length: value.length,
-			items: value.slice(0, 12).map((item) => summarize(item, resourceMeta)),
+			items: depth >= 3
+				? []
+				: value.slice(0, 12).map((item) => summarizeValue(item, resourceMeta, seen, depth + 1)),
 		};
 	}
 	return {
@@ -305,7 +319,7 @@ export function observe<T extends Imports>(imports: T, opts: ObserveOptions = {}
 			function: context.function,
 			arguments: args,
 			resource: context.resource,
-			result: summarize(result, resourceMeta),
+			result: summarizeValue(result, resourceMeta),
 			durationUs,
 		});
 		if (context.resource?.lifecycle === 'drop') {
@@ -336,7 +350,7 @@ export function observe<T extends Imports>(imports: T, opts: ObserveOptions = {}
 			function: context.function,
 			arguments: args,
 			resource: context.resource,
-			error: summarize(error, resourceMeta),
+			error: summarizeValue(error, resourceMeta),
 			durationUs: Math.max(0, Math.round((clock() - start) * 1000)),
 		});
 		throw error;
@@ -356,7 +370,7 @@ export function observe<T extends Imports>(imports: T, opts: ObserveOptions = {}
 
 		const proxy = new Proxy(fn, {
 			apply(target, thisArg, rawArgs) {
-				const args = rawArgs.map((arg) => summarize(arg, resourceMeta));
+				const args = rawArgs.map((arg) => summarizeValue(arg, resourceMeta));
 				const callId = ++nextCallId;
 				const start = clock();
 				const summary = mutableSummary(context.interface);

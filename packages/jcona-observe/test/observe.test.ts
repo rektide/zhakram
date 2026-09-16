@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
 	observationSummary,
 	observe,
+	summarize,
 	type ObservationEvent,
 } from '../src/observe.ts';
 
@@ -31,6 +32,14 @@ test('observes sync dispatch with bounded BigInt and byte summaries', () => {
 	});
 });
 
+test('bounds recursive arrays without throwing', () => {
+	const value: unknown[] = [];
+	value.push(value);
+	assert.deepEqual(summarize(value), {
+		type: 'array', length: 1, items: [{ type: 'circular' }],
+	});
+});
+
 test('tracks async calls while they are in flight', async () => {
 	let resolve!: (value: number) => void;
 	const pending = new Promise<number>((done) => { resolve = done; });
@@ -44,10 +53,10 @@ test('tracks async calls while they are in flight', async () => {
 
 test('preserves resource instanceof and observes methods and drops', () => {
 	class OutputStream {
-		writes = 0;
+		#writes = 0;
 		write(bytes: Uint8Array): number {
-			this.writes += bytes.byteLength;
-			return this.writes;
+			this.#writes += bytes.byteLength;
+			return this.#writes;
 		}
 		drop(): void {}
 	}
