@@ -12,5 +12,8 @@
 	},
 	"devDependencies": {
 		"tsdown": "latest"
+	},
+	"dependencies": {
+		"jcona-observe": "workspace:*"
 	}
 }

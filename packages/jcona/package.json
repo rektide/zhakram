@@ -11,7 +11,8 @@
 		".": "./src/index.ts"
 	},
 	"dependencies": {
-		"@bytecodealliance/jco": "^1.33.0"
+		"@bytecodealliance/jco": "^1.33.0",
+		"jcona-observe": "workspace:*"
 	},
 	"devDependencies": {
 		"playwright": "^1.63.0"

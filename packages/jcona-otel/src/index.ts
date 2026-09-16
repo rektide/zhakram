@@ -10,6 +10,7 @@ export type {
 	SpanContext,
 	SpanData,
 	SpanSink,
+	TracingSink,
 	Status,
 	TracingHost,
 } from './tracing.ts';

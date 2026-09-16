@@ -81,10 +81,15 @@ export interface EndedSpan {
 	durationUs: bigint;
 }
 
-/** Pluggable span sink. The default logs one line per closed span. */
+import type { EventSink } from 'jcona-observe/observe';
+
+/** Legacy pluggable span sink. The default logs one line per closed span. */
 export interface SpanSink {
 	onSpan(ended: EndedSpan): void;
 }
+
+/** Either the original onSpan shape or the generic sink shared with host observations. */
+export type TracingSink = SpanSink | EventSink<EndedSpan>;
 
 function durationUs(start: DateTime, end: DateTime): bigint {
 	const nanos =
@@ -140,7 +145,7 @@ const NO_CONTEXT: SpanContext = {
  * the all-zero sentinel when the guest is not inside any host-known span —
  * lib/zena/otel starts a root span (fresh trace-id, empty parent) then.
  */
-export function createTracing(opts: { sink?: SpanSink } = {}): TracingHost {
+export function createTracing(opts: { sink?: TracingSink } = {}): TracingHost {
 	const sink = opts.sink ?? consoleSink();
 	const stack: { ctx: SpanContext; depth: number }[] = [];
 
@@ -154,11 +159,13 @@ export function createTracing(opts: { sink?: SpanSink } = {}): TracingHost {
 			while (idx >= 0 && stack[idx].ctx.spanId !== span.spanContext.spanId) idx--;
 			const depth = idx >= 0 ? stack[idx].depth : 0;
 			if (idx >= 0) stack.splice(idx, 1);
-			sink.onSpan({
+			const ended = {
 				span,
 				depth,
 				durationUs: durationUs(span.startTime, span.endTime),
-			});
+			};
+			if ('onSpan' in sink) sink.onSpan(ended);
+			else sink.emit(ended);
 		},
 
 		currentSpanContext() {

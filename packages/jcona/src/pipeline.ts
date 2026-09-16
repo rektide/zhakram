@@ -8,6 +8,8 @@
 import { copyFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
+import { exposeResourceTables } from 'jcona-observe/expose';
+
 import { sh } from './exec.ts';
 import { toolPaths } from './config.ts';
 
@@ -78,11 +80,14 @@ export interface TranspileOptions {
 	name?: string;
 	/** Extra args passed through to `jco transpile` (e.g. `-I async`). */
 	extra?: string[];
+	/** Inject the guarded `_util.resourceTables.snapshot()` prototype. */
+	exposeResources?: boolean;
 }
 
 export interface TranspileResult {
 	outDir: string;
 	entry: string;
+	resourceExposure?: 'transformed' | 'already-exposed' | 'skipped';
 }
 
 /** Transpile a component to JS via `jco transpile` (exnref bindgen on). */
@@ -93,5 +98,9 @@ export async function transpileComponent(component: string, opts: TranspileOptio
 	const outDir = path.resolve(opts.outDir ?? path.join(path.dirname(componentAbs), `${wasmStem(componentAbs)}-out`));
 	await sh(tools.jco, ['transpile', '--bindgen-enable-wasm-exnref', '--name', name,
 		componentAbs, '-o', outDir, ...(opts.extra ?? [])]);
-	return { outDir, entry: path.join(outDir, `${name}.js`) };
+	const entry = path.join(outDir, `${name}.js`);
+	const resourceExposure = opts.exposeResources
+		? (await exposeResourceTables(entry)).status
+		: undefined;
+	return { outDir, entry, resourceExposure };
 }

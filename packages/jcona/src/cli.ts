@@ -14,9 +14,11 @@ commands:
       zena build --dce → wasm-tools component embed → component new.
       --rust-artifact <wasm>   use a prebuilt component (wasm32-wasip2 cargo
                                artifact): skip zena/embed/new, copy to -o
-  transpile <component.wasm> [-o dir] [--name name] [-- <jco args…>]
-      jco transpile --bindgen-enable-wasm-exnref; entry becomes <name>.js
-      (default name: component stem without .component)
+  transpile <component.wasm> [-o dir] [--name name] [--expose-resources] [-- <jco args…>]
+	  jco transpile --bindgen-enable-wasm-exnref; entry becomes <name>.js
+	  (default name: component stem without .component)
+	  --expose-resources       guarded jco 1.33 transform adding
+	                           _util.resourceTables.snapshot()
   run <dir|component.wasm> [--call export] [--repeat n]
       import a transpiled dir (or transpile a component first) and invoke it.
       Default invocation: the wasi:cli/run export (command components);
@@ -32,13 +34,15 @@ interface Flags {
 	positional: string[];
 	string: Record<string, string | undefined>;
 	numbers: Record<string, number | undefined>;
+	boolean: Record<string, boolean | undefined>;
 	extra: string[];
 }
 
 function parse(argv: string[]): Flags {
-	const flags: Flags = { positional: [], string: {}, numbers: {}, extra: [] };
+	const flags: Flags = { positional: [], string: {}, numbers: {}, boolean: {}, extra: [] };
 	const stringFlags = new Set(['world', 'wit', 'o', 'out', 'rust-artifact', 'name', 'call', 'check']);
 	const numberFlags = new Set(['port', 'repeat']);
+	const booleanFlags = new Set(['expose-resources']);
 	const shortFlags: Record<string, string> = { '-o': 'out' };
 	let passthrough = false;
 	for (let i = 0; i < argv.length; i++) {
@@ -52,8 +56,13 @@ function parse(argv: string[]): Flags {
 		} else if (arg.startsWith('--')) {
 			const eq = arg.indexOf('=');
 			const name = eq === -1 ? arg.slice(2) : arg.slice(2, eq);
-			if (!stringFlags.has(name) && !numberFlags.has(name)) {
+			if (!stringFlags.has(name) && !numberFlags.has(name) && !booleanFlags.has(name)) {
 				throw new Error(`unknown flag --${name}\n\n${USAGE}`);
+			}
+			if (booleanFlags.has(name)) {
+				if (eq !== -1) throw new Error(`--${name} does not take a value\n\n${USAGE}`);
+				flags.boolean[name] = true;
+				continue;
 			}
 			const v = eq === -1 ? argv[++i] : arg.slice(eq + 1);
 			if (v === undefined) throw new Error(`--${name} needs a value\n\n${USAGE}`);
@@ -103,13 +112,15 @@ try {
 		case 'transpile': {
 			const [component] = flags.positional;
 			if (!component) throw new Error('transpile needs a <component.wasm>\n\n' + USAGE);
-			const { outDir, entry } = await transpileComponent(component, {
+			const { outDir, entry, resourceExposure } = await transpileComponent(component, {
 				outDir: out(flags),
 				name: flags.string.name,
 				extra: flags.extra,
+				exposeResources: flags.boolean['expose-resources'],
 			});
 			console.log(`entry: ${entry}`);
 			console.log(`out: ${outDir}`);
+			if (resourceExposure) console.log(`resource exposure: ${resourceExposure}`);
 			break;
 		}
 		case 'run': {
