@@ -203,6 +203,19 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — F3 design wave complete** (doc/jspi/: design0.glm53max,
+  design1.solmax, syn1.glm53h): unified position = JSPI-first as a NAMED
+  LINEAR-AWAIT PROFILE of one driver-neutral language — design0's
+  front-end-only build scope inside design1's contract framing; Future<T>
+  declared but never reified; p3 callbacks stay second driver AND
+  conformance oracle, owning the single shared design moment (rejection
+  classification, cancellation, lifting the await-in-try ban). Syn caught
+  one mechanism error (async-typing constraint is jco wrapper PLACEMENT
+  Suspending/promising, not a task trap) and scheduled the one missing
+  experiment: host-Promise REJECTION delivery through a suspended zena
+  stack (never empirically pinned). F3-slice1 design phase DONE; ticket
+  open pending operator go/no-go on implementation.
+
 - **2026-09-16 — F1d landed (5th fork patch)**: component flavor of
   zena:error selected by `--dce` via a new stdlib-manifest axis (console
   swap seam extended). Lazy capture rejected on evidence: trace consumers
