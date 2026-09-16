@@ -203,6 +203,17 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — F1c root-caused and fixed (4th fork patch)**: DCE's
+  usage analysis tracked only `==`/`!=` among resolved operator methods
+  (usage.ts:844), so `String.operator+` was culled while its MethodInfo
+  kept sentinel index -1 — encoded by call-site lowering as 0x7f, i.e.
+  the mysterious "unknown function 127". Not an index-space desync at
+  all. Fix: track all resolvedOperatorMethod calls (incl. mangled
+  overloads and compound assignment). Suite 2299 pass / 0 fail with new
+  operator-DCE regression tests. Verified: concat under --dce now
+  validates (jcona repro green). Lesson stacking with the div bug: DCE
+  + overload/operator resolution is zena's most fragile interaction.
+
 - **2026-09-16 — exceptions defeat --dce's env-import elimination**: the
   first exception-USEING zena component (examples/handles-zena) keeps
   `env.captureStackTrace` even under `--dce` — throwing constructs Error,
