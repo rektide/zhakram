@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>resource-tables: loading</title>
+<script type="importmap">
+  {
+    "imports": {
+      "@bytecodealliance/preview2-shim/cli": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/cli.js",
+      "@bytecodealliance/preview2-shim/io": "/node_modules/@bytecodealliance/preview2-shim/dist/browser/io.js"
+    }
+  }
+</script>
+<body>
+<p id="status">loading…</p>
+<script type="module">
+  const el = document.getElementById('status');
+  const log = (line) => console.log(line);
+  try {
+    const [cli, io] = await Promise.all([
+      import('@bytecodealliance/preview2-shim/cli'),
+      import('@bytecodealliance/preview2-shim/io'),
+    ]);
+    const imports = {
+      'wasi:cli/stdout': cli.stdout,
+      'wasi:io/streams': io.streams,
+      'wasi:io/error': io.error,
+      'wasi:io/poll': io.poll,
+    };
+
+    const component = await import('./build/resource-tour-out/resource-tour.js');
+    const instance = await component.instantiate(undefined, imports);
+    const snapshot = () => component._util.resourceTables.snapshot();
+    const tableEntries = (tables) =>
+      tables.instances.flatMap((inst) =>
+        inst.handleTables.flatMap((table) =>
+          table.entries.map((entry) => ({ table: table.tableIndex, ...entry }))));
+    const liveCount = (tables) =>
+      tableEntries(tables).filter((entry) => entry.state === 'live').length;
+
+    const notes = [];
+    let droppedThrew = false;
+    for (const step of ['step1', 'step2', 'step3']) {
+      try {
+        instance[step]();
+      } catch (error) {
+        // Known browser preview2-shim quirk: get-stdout hands out the SAME
+        // underlying stream object every call, and dispose closes it — so
+        // step3's post-drop write via B throws {tag:"closed"}. The
+        // component-model table stays truthful regardless.
+        droppedThrew = true;
+        notes.push(`step3 post-drop write threw ${JSON.stringify(error?.tag ?? String(error))} (browser shim closes shared stdout on dispose)`);
+        log(`caught: ${notes[notes.length - 1]}`);
+      }
+      const tables = snapshot();
+      log(`${step}: live=${liveCount(tables)} entries=${JSON.stringify(tableEntries(tables))}`);
+    }
+
+    const tables = snapshot();
+    const entries = tableEntries(tables);
+    const ok = liveCount(tables) === 1
+      && entries.some((e) => e.handle === 1 && e.state === 'free')
+      && entries.some((e) => e.handle === 2 && e.state === 'live');
+    const quirk = droppedThrew ? ' quirk-noted' : '';
+    el.textContent = `${ok ? 'RESOURCE-TABLES-BROWSER-OK' : 'RESOURCE-TABLES-BROWSER-FAIL'}: live=${liveCount(tables)} dropped=1${quirk} tableInstances=${tables.instances.length}`
+      + (notes.length ? ` — ${notes.join('; ')}` : '');
+  } catch (error) {
+    let detail;
+    try { detail = JSON.stringify(error, Object.getOwnPropertyNames(error)); }
+    catch { detail = String(error); }
+    el.textContent = `RESOURCE-TABLES-BROWSER-ERROR: ${detail}`;
+  }
+  document.title = el.textContent;
+</script>

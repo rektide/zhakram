@@ -1,0 +1,75 @@
+/**
+ * resource-tour: watch a WASI 0.2 resource table breathe, in three exports.
+ *
+ * The component model gives every component its own handle tables: i32
+ * indices that point at host objects (each entry records the live rep plus
+ * an own/borrow bit). This guest deliberately plays with those entries so a
+ * host that snapshots `_util.resourceTables` between calls can watch:
+ *
+ *   step1 — acquire stream A (get-stdout), hold it in a guest global
+ *   step2 — acquire stream B; write through A to prove A is still live
+ *   step3 — [resource-drop] A; write through B to prove B is unaffected
+ *
+ * State lives in module-level `var` globals, so the three exports share the
+ * same handles across separate host-driven calls — that shared state is what
+ * makes the table evolution observable one step at a time.
+ *
+ * The drop is the demo's point, and also the demo's edge: stdout handles are
+ * safe to drop on Node (writes keep working; the Node shim has no
+ * closed-flag), but the *browser* preview2-shim closes the shared
+ * underlying stdout object on dispose, so a post-drop write there throws
+ * {tag:"closed"} (see lib/zena/wasip2/stdout.zena for the full lesson). The
+ * browser page treats that throw as part of the show; the component-model
+ * table stays truthful either way — 1 free, 2 live.
+ */
+import { Memory } from 'zena:memory';
+import { String } from 'zena:string';
+import { cabiFree, cabiRealloc } from '../../lib/zena/cabi/cabi.zena';
+
+@external('wasi:cli/stdout@0.2.12', 'get-stdout')
+declare function __getStdout(): i32;
+
+@external('wasi:io/streams@0.2.12', '[method]output-stream.blocking-write-and-flush')
+declare function __bwaf(stream: i32, ptr: i32, len: i32, retptr: i32): void;
+
+@external('wasi:io/streams@0.2.12', '[resource-drop]output-stream')
+declare function __dropStream(stream: i32): void;
+
+let memory = Memory.default;
+
+// Guest-held handles. Module-level mutable globals: they survive across the
+// three exports, so the host can drive the story one call at a time.
+var heldA: i32 = 0;
+var heldB: i32 = 0;
+
+/** Write `text` (ASCII) plus a newline to `stream`, flushing. */
+let writeLineOn = (stream: i32, text: String): void => {
+  let len = text.length + 1; // trailing '\n' so host logs stay line-clean
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len - 1; i += 1) {
+    memory.setU8(ptr + i, text.getByteAt(i));
+  }
+  memory.setU8(ptr + len - 1, 10);
+  let scratch = cabiRealloc(0, 0, 4, 4);
+  __bwaf(stream, ptr, len, scratch);
+  cabiFree(scratch, 4, 4);
+  cabiFree(ptr, len, 1);
+};
+
+/** Step 1: acquire stream A and hold its handle in a guest global. */
+export let step1 = (): void => {
+  heldA = __getStdout();
+  writeLineOn(heldA, 'step1: acquired stream A; writing through it');
+};
+
+/** Step 2: acquire stream B; prove A is still live by writing through it. */
+export let step2 = (): void => {
+  heldB = __getStdout();
+  writeLineOn(heldA, 'step2: acquired stream B; A can still write');
+};
+
+/** Step 3: explicitly drop A; prove B is unaffected by writing through it. */
+export let step3 = (): void => {
+  __dropStream(heldA);
+  writeLineOn(heldB, 'step3: dropped stream A; B is unaffected');
+};
