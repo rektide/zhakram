@@ -1,0 +1,63 @@
+/** Guest-side ownership lifecycle and misuse diagnostics. */
+import { Memory } from 'zena:memory';
+import { String } from 'zena:string';
+import { cabiFree, cabiRealloc } from '../../lib/zena/cabi/cabi.zena';
+import {
+  BorrowedHandle,
+  OutputStream,
+  acquireStdout,
+} from '../../lib/zena/handles/handles.zena';
+
+@external('wasi:io/streams@0.2.12', '[method]output-stream.blocking-write-and-flush')
+declare function __bwaf(stream: i32, ptr: i32, len: i32, retptr: i32): void;
+
+let memory = Memory.default;
+
+let writeLine = (stream: BorrowedHandle<OutputStream>, text: String): void => {
+  let len = text.length + 1;
+  let ptr = cabiRealloc(0, 0, 1, len);
+  for (var i = 0; i < len - 1; i += 1) {
+    memory.setU8(ptr + i, text.getByteAt(i));
+  }
+  memory.setU8(ptr + len - 1, 10);
+  let scratch = cabiRealloc(0, 0, 4, 4);
+  __bwaf(stream.get() as i32, ptr, len, scratch);
+  cabiFree(scratch, 4, 4);
+  cabiFree(ptr, len, 1);
+};
+
+export let run = (): void => {
+  // Keep a second owner for diagnostics after the lifecycle handle is gone.
+  // This is safe in the Node preview2 shim, but not in the browser shim.
+  let diagnostics = acquireStdout();
+  let resource = acquireStdout();
+
+  writeLine(resource.borrow(), 'lifecycle: acquired -> borrowed -> wrote');
+  resource.drop();
+  writeLine(diagnostics.borrow(), 'lifecycle: dropped exactly once');
+
+  try {
+    resource.drop();
+  } catch (error) {
+    writeLine(diagnostics.borrow(), error.message);
+    writeLine(diagnostics.borrow(), 'caught double-drop: handle was already dropped');
+  };
+
+  try {
+    let rejectedBorrow = resource.borrow();
+  } catch (error) {
+    writeLine(diagnostics.borrow(), error.message);
+    writeLine(diagnostics.borrow(), 'caught use-after-drop: handle was already dropped');
+  };
+
+  let borrowedDiagnostics = diagnostics.borrow();
+  try {
+    borrowedDiagnostics.drop();
+  } catch (error) {
+    writeLine(diagnostics.borrow(), error.message);
+    writeLine(diagnostics.borrow(), 'caught drop-of-borrow: borrow cannot own a drop');
+  };
+
+  writeLine(diagnostics.borrow(), 'HANDLES-ZENA-OK: lifecycle=correct misuses=3');
+  diagnostics.drop();
+};
