@@ -203,6 +203,19 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — resource-table demo root-caused the browser quirk**:
+  examples/resource-tables (standalone, no otel) shows every
+  `get-stdout()` returning an OWN handle bound to the **same shared
+  stdout singleton** in both shims (two table reps, one JS object —
+  exposed by the codemod's captureTables). The browser shim's
+  `OutputStream` flips `#open=false` on dispose, so dropping ANY handle
+  closes stdout for all surviving handles -> the `{tag:"closed"}` we'd
+  been working around is a **shared-singleton + own-handle mismatch**,
+  not a guest bug. Node's shim has no such flag, so it never showed.
+  Precise mechanism ready for the upstream jco/preview2-shim issue.
+  Also learned: trivial components carry TWO handle tables (table[0]
+  always empty, table[1] real) — read snapshots accordingly.
+
 - **2026-09-16 — host introspection LEAD landed + verified**: tier 1
   (`packages/jcona-observe`: every WASI call, resource lifecycle, shared
   sink with jcona-otel) and tier 2 (`jcona transpile
