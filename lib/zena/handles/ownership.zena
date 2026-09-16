@@ -1,0 +1,78 @@
+/**
+ * Runtime ownership discipline for opaque component-model resource handles.
+ *
+ * T should be a distinct i32 resource type. The wrapper is intentionally
+ * boring: it records one of owned, moved, or dropped and checks every access.
+ */
+import { Error } from 'zena:error';
+
+let OWNED: i32 = 0;
+let MOVED: i32 = 1;
+let DROPPED: i32 = 2;
+
+/** A read-only handle view. It never owns or invokes a resource dropper. */
+export final class BorrowedHandle<T> {
+  #handle: T;
+  #owner: OwnedHandle<T>;
+
+  new(handle: T, owner: OwnedHandle<T>) : #handle = handle, #owner = owner {}
+
+  /** Read the handle while its owner remains live. */
+  get(): T {
+    this.#owner.assertOwned();
+    return this.#handle;
+  }
+
+  /** A borrow can never destroy its owner's resource. */
+  drop(): never {
+    throw new Error('cannot drop a borrowed handle');
+  }
+}
+
+/** An owned resource handle with explicit move, borrow, and drop operations. */
+export final class OwnedHandle<T> {
+  #handle: T;
+  #dropper: (handle: T) => void;
+  var #state: i32;
+
+  new(handle: T, dropper: (handle: T) => void)
+    : #handle = handle, #dropper = dropper, #state = OWNED
+  {}
+
+  /** Internal guard shared by borrows and ownership operations. */
+  assertOwned(): void {
+    if (this.#state == MOVED) {
+      throw new Error('handle was moved');
+    }
+    if (this.#state == DROPPED) {
+      throw new Error('handle was already dropped');
+    }
+  }
+
+  /** Create a checked, non-owning view. */
+  borrow(): BorrowedHandle<T> {
+    this.assertOwned();
+    return new BorrowedHandle<T>(this.#handle, this);
+  }
+
+  /** Transfer ownership to a fresh wrapper and invalidate this wrapper. */
+  move(): OwnedHandle<T> {
+    this.assertOwned();
+    this.#state = MOVED;
+    return new OwnedHandle<T>(this.#handle, this.#dropper);
+  }
+
+  /** Invoke the resource drop external exactly once. */
+  drop(): void {
+    this.assertOwned();
+    // Invalidate before entering the host: even a throwing dropper must never
+    // be called a second time through this owner.
+    this.#state = DROPPED;
+    let invokeDrop = this.#dropper;
+    invokeDrop(this.#handle);
+  }
+}
+
+/** Wrap a newly acquired own handle. */
+export let acquire = <T>(handle: T, dropper: (handle: T) => void): OwnedHandle<T> =>
+  new OwnedHandle<T>(handle, dropper);

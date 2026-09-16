@@ -7,6 +7,7 @@ proven by at least one green example before it lands here.
 | --- | --- | --- |
 | [`cabi/`](/lib/zena/cabi/README.md) | canonical ABI: allocation (`cabiRealloc`/`cabiFree`) + string lift/lower (direct and indirect result forms) | emoji-zena, interop-matrix, otel-zena |
 | [`wasip2/`](/lib/zena/wasip2/README.md) | wasi p2-direct wrappers (stdout, random, clocks), byte-exact `@0.2.12` externals | interop-jshost, emoji-zena, otel-zena |
+| [`handles/`](/lib/zena/handles/README.md) | guest-side typed resource ownership: acquire, borrow, move, exactly-once drop, and misuse detection | handles-zena |
 | [`otel/`](/lib/zena/otel/README.md) | guest-side OpenTelemetry spans, hand-lowered `wasi:otel/tracing@0.2.0-rc.2` | otel-zena |
 
 ## Import patterns

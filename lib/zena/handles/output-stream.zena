@@ -1,0 +1,19 @@
+/** Typed ownership adapter for wasi:io/streams.output-stream. */
+import { OwnedHandle, acquire } from './ownership.zena';
+
+/** Nominal resource type: not interchangeable with another i32 handle. */
+export distinct type OutputStream = i32;
+
+@external('wasi:cli/stdout@0.2.12', 'get-stdout')
+declare function __getStdout(): i32;
+
+@external('wasi:io/streams@0.2.12', '[resource-drop]output-stream')
+declare function __dropOutputStream(stream: i32): void;
+
+let dropOutputStream = (stream: OutputStream): void => {
+  __dropOutputStream(stream as i32);
+};
+
+/** Acquire one owned stdout handle. */
+export let acquireStdout = (): OwnedHandle<OutputStream> =>
+  acquire<OutputStream>(__getStdout() as OutputStream, dropOutputStream);
