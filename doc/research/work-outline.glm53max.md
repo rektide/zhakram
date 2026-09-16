@@ -203,6 +203,18 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — exceptions defeat --dce's env-import elimination**: the
+  first exception-USEING zena component (examples/handles-zena) keeps
+  `env.captureStackTrace` even under `--dce` — throwing constructs Error,
+  and `Error.new` calls `__captureStackTrace()`, so the externref import
+  is legitimately rooted. Workaround landed in the example: a guarded
+  WAT rewrite replacing the import with a local `ref.null extern`
+  function (at-most-once, shape-tested). Implication: EVERY realistic
+  zena component (try/catch is core) needs this until the fork makes
+  stack-trace capture lazy/optional (the E1-era `#stackTrace = null`
+  stdlib variant, now with evidence it's load-bearing) or jcona build
+  absorbs the rewrite. Ticketed zenajco-f1d.
+
 - **2026-09-16 — resource-table demo root-caused the browser quirk**:
   examples/resource-tables (standalone, no otel) shows every
   `get-stdout()` returning an OWN handle bound to the **same shared
