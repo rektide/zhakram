@@ -203,6 +203,20 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — host introspection LEAD landed + verified**: tier 1
+  (`packages/jcona-observe`: every WASI call, resource lifecycle, shared
+  sink with jcona-otel) and tier 2 (`jcona transpile
+  --expose-resources`: post-transpile codemod filling the generated
+  `_util` — which upstream ships EMPTY — with live resource-table
+  snapshots, frozen copies, jco-version shape-guarded). Demo
+  `examples/observe-zena`: interleaved guest spans + host dispatch +
+  liveHandles=2 table snapshot, Node + browser. Upstream PR sketch
+  scoped file:line into jco @c03204df (transpile_bindgen.rs:679-746,
+  intrinsics/resource.rs:94-110, esm_bindgen.rs:202-287, …);
+  recommended upstream shape: per-instantiate() inspector over
+  module-level registry. Follower ticket (wasmtime ResourceTable
+  snapshot API) remains open.
+
 - **2026-09-15 — otel landed; two ABI preconceptions corrected**: (1)
   `wasi:otel/tracing` has **no resources** — the streams/i32-handle precedent
   didn't transfer; it's flat params + hand-built record images (the 168-byte
