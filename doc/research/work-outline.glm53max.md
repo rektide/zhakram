@@ -203,6 +203,14 @@ mandate the async/JSPI machinery? What does that imply for F3? Output: a
 
 ## Findings log (newest first)
 
+- **2026-09-16 — F1d landed (5th fork patch)**: component flavor of
+  zena:error selected by `--dce` via a new stdlib-manifest axis (console
+  swap seam extended). Lazy capture rejected on evidence: trace consumers
+  read post-unwind (backtrace_test.zena, zena-cli main.rs). Exception-using
+  components now componentize with --dce alone; handles-zena guard deleted
+  (identical output). Suite 2304/0. F2 inherits a one-line re-key path for
+  a real --target component.
+
 - **2026-09-16 — F1c root-caused and fixed (4th fork patch)**: DCE's
   usage analysis tracked only `==`/`!=` among resolved operator methods
   (usage.ts:844), so `String.operator+` was culled while its MethodInfo

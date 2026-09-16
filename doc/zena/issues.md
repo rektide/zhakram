@@ -213,9 +213,7 @@ whole under DCE")
 
 ---
 
-## UNRESOLVED
-
-### U1 — `env.captureStackTrace` survives `--dce` whenever exceptions are used
+### R5 (was U1) — `env.captureStackTrace` survives `--dce` under exceptions (RESOLVED)
 
 **Ticket:** `zenajco-f1d-stacktraces` (in_progress, P2) · **Fix in flight;
 workaround shipped.**
@@ -259,6 +257,13 @@ workaround shipped.**
   target-conditional stdlib), workaround active.
 
 ---
+
+
+**RESOLVED 2026-09-16 — fork `wwtoztqk` (zenajco-f1d-stacktraces).** Target-conditional stdlib, triggered by `--dce` (not a new target): `error/component.zena` (no StackRef/env externals, `getStackTrace() -> null`) selected via a new `dce` axis on the stdlib manifest, mirroring the console swap. Lazy capture was rejected on evidence — real trace consumers read traces after the throwing frame unwound (`packages/zena-compiler/zena/test/backtrace_test.zena`, `zena-cli` main.rs:735+), which read-time capture cannot serve. Verified: dce'd throwing program → 0 env imports, componentizes, catches correctly; non-dce builds byte-identical; suite 2304 pass / 0 fail (5 new tests). `examples/handles-zena` dropped its WAT guard (jcona `feaed184`) with identical output. F2 note: a `--target component` can re-key the same manifest seam in one line.
+
+## UNRESOLVED
+
+*None open. New defects: file a bd ticket, then add an entry here when root-caused.*
 
 ## ADJACENT (non-zena defects hit along the way)
 
