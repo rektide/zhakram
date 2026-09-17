@@ -4,8 +4,9 @@ The cross-product of the interop trio — who *generates* randomness, who
 *consumes* it, and *who wires them together*:
 
 - **generator**: `rust` = [`rng-rs`](../../crates/rng-rs) (interface export),
-  `zena` = [`zena/rng-zena.zena`](zena/rng-zena.zena) (flat world-level
-  `next` export)
+  `zena` = [`zena/rng-zena.zena`](zena/rng-zena.zena) (the `rng-source-both`
+  world: interface export via the fork's `@exportName`, plus a flat
+  world-level `next`)
 - **consumer**: `rust` = [`consume-rs`](../../crates/consume-rs) lib
   (`read() -> string`), `zena` = [`zena/consume-zena.zena`](zena/consume-zena.zena)
   (`read() -> string` via the indirect canonical ABI from
@@ -36,12 +37,14 @@ rust       zena       static   PASS    "49,-56,-78,34,80"
 rust       js         jshost   PASS    "49,-56,-78,34,80"
 rust       js         static   N/A     the JS consumer is the host
 zena       rust       jshost   PASS    "-82,-53,-18,72,-74"
-zena       rust       static   SKIP    wac plug: no matching imports
+zena       rust       static   PASS    "-82,-53,-18,72,-74"
 zena       zena       jshost   PASS    "-82,-53,-18,72,-74"
-zena       zena       static   SKIP    wac plug: no matching imports
+zena       zena       static   PASS    "-82,-53,-18,72,-74"
 zena       js         jshost   PASS    "-82,-53,-18,72,-74"
 zena       js         static   N/A     the JS consumer is the host
 ```
+
+10 pass, 0 skip, 2 n/a, 0 fail.
 
 Determinism: the rust generator draws `49,-56,-78,34,80` (fixed
 xorshift64\* seed); the zena generator must match the BigInt model of its
@@ -49,42 +52,31 @@ source (xorshift64, seed 42 — mirrored in `run.mjs`), currently
 `-82,-53,-18,72,-74`. `--browser` adds a Chrome rerun of all six jshost
 cells via `index.html` (import map → preview2-shim browser builds).
 
-## Why the zena generator uses a flat world
+## Why the generator exports the rng twice
 
-A world like `rng-source { export rng; }` (interface export) requires the
-core module to export the mangled name `rektide:interop/rng@0.1.0#next`.
-Zena export names are identifiers — no `#`, `:`, or `@` — so
-`wasm-tools component new` rejects the embedding:
-
-```text
-error: failed to encode a component from module
-
-Caused by:
-    0: failed to decode world from module
-    1: module was not valid
-    2: failed to find export of interface `rektide:interop/rng@0.1.0` function `next`
-```
-
-Hence `rng-source-flat { export next: func() -> s32; }` — a world-level
-function lifts from a plain `next` core export. The consequence is the
-SKIP pair above: under static composition, a world-level `next` export
-cannot satisfy an interface *import* (`wac plug`:
-`error: the socket component had no matching imports for the plugs that
-were provided`). Importing an interface is not a problem — the zena
-consumer does it, via the plain qualified module name:
+An interface export requires the core module to carry the mangled name
+`rektide:interop/rng@0.1.0#next` — characters zena identifiers cannot
+spell (no `#`, `:`, or `@`) — so `wasm-tools component new` rejects the
+naive embedding. The generator first shipped as a flat world
+(`rng-source-flat { export next }`), whose world-level export cannot
+satisfy an interface *import* under static composition: `wac plug`
+reported `the socket component had no matching imports for the plugs that
+were provided`, and the zena × static cells SKIPped. Importing an
+interface was never the problem — the zena consumer does it, via the
+plain qualified module name:
 
 ```zena
 @external('rektide:interop/rng@0.1.0', 'next')
 declare function __rngNext(): i32;
 ```
 
-Closing the static gap needs one of: zena support for mangled export names
-(or an export-renaming attribute), a tiny adapter component exporting the
-interface while forwarding to a flat `next`, or wac-side renaming — all
-future work, deliberately not forced here.
-
-The harness treats the known skip as legitimate (and flips it to PASS if a
-future toolchain composes it) — any *other* wac failure is a FAIL.
+The static gap closed via the fork's `@exportName` decorator, which lets
+a zena export carry the mangled core name. `rng-zena.zena` now implements
+the `rng-source-both` world: `rngNext` exported under
+`rektide:interop/rng@0.1.0#next` (for static composition) alongside the
+flat world-level `next` the JS host reads (`inst.next`) in jshost mode.
+Both static cells compose and pass, and the harness no longer tolerates
+skips — any wac failure is a FAIL.
 
 ## Notes
 

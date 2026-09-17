@@ -76,8 +76,10 @@ Recorded while converting [`examples/emoji-rs`](/examples/emoji-rs/README.md)
 
 ## Follow-ups (not yet converted)
 
-The remaining examples still hand-roll the pipeline; converting them is
-mechanical but deliberately not done yet:
+Five example run scripts now drive this CLI (`emoji-rs`, `otel-zena`,
+`observe-zena`, `handles-zena`, `resource-tables`, via `"$ZHAKRAM"`). The
+remaining hand-rolled spots; converting them is mechanical but
+deliberately not done yet:
 
 - `examples/emoji-zena/run.sh` — the zena leg, direct translation.
 - `examples/interop-jshost` — README quickstart + reproduce blocks.

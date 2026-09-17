@@ -7,9 +7,11 @@ artifacts. Shared guest implementations live in [`../crates/`](../crates/README.
 | --- | --- |
 | [`emoji-wit/`](/examples/emoji-wit/README.md) | shared WIT contracts (emoji-picker, rng worlds) — the contract of record between zena and Rust implementations |
 | [`emoji-zena/`](/examples/emoji-zena/README.md) | zena emoji-picker guest: `pick() -> string` via the indirect canonical ABI, Node & browser |
+| [`handles-zena/`](/examples/handles-zena/README.md) | zena guest proving [`lib/zena/handles`](/lib/zena/handles/README.md) end to end: typed own handles, checked borrows, exactly-once drop, caught double-drop / use-after-drop / drop-of-borrow — Node only, by design |
 | [`emoji-rs/`](/examples/emoji-rs/README.md) | Rust emoji-picker twin under jco; the `wasi:random/random@0.2.6` shim verdict |
 | [`interop-jshost/`](/examples/interop-jshost/README.md) | JS-host composition demos + the **p2-direct** proof (zena guest printing via wasi:cli/stdout in Node & browser); [addendum](/examples/interop-jshost/README-ADDENDUM.md): host-mediated rng composition (`compose.mjs`) |
 | [`interop-static/`](/examples/interop-static/README.md) | static composition: `wac plug` rng-source → rng-reader-command, run under jco |
 | [`interop-matrix/`](/examples/interop-matrix/README.md) | the full {generator} × {consumer} × {jshost\|static} grid, zena included, Node + browser |
 | [`otel-zena/`](/examples/otel-zena/README.md) | zena guest emitting observable spans via hand-lowered `wasi:otel/tracing` + the zhakram-otel JS host sink — Node & browser |
 | [`observe-zena/`](/examples/observe-zena/README.md) | interleaved guest spans + host WASI/resource dispatch, per-interface summaries, and guarded jco table snapshots — Node & browser |
+| [`resource-tables/`](/examples/resource-tables/README.md) | standalone WASI resource-table introspection: zena guest acquires/holds/drops host streams while the host snapshots the guest handle table (`--expose-resources`) — Node & browser |
