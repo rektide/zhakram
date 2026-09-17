@@ -1,5 +1,5 @@
 {
-	"name": "zhakram",
+	"name": "zhakram-workspace",
 	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
@@ -24,7 +24,7 @@
 		"@bytecodealliance/preview2-shim": "^0.24.1"
 	},
 	"devDependencies": {
-		"zhakram": "workspace:*",
-		"playwright": "^1.63.0"
+		"playwright": "^1.63.0",
+		"zhakram": "workspace:*"
 	}
 }
