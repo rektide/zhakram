@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// jcona — the pipeline tool for this repo (single bin, hand-rolled parsing;
+// zhakram — the pipeline tool for this repo (single bin, hand-rolled parsing;
 // see README.md for the alternatives considered).
 import process from 'node:process';
 
@@ -7,7 +7,7 @@ import { invoke } from './run.ts';
 import { buildComponent, transpileComponent } from './pipeline.ts';
 import { checkPage, serve } from './serve.ts';
 
-const USAGE = `usage: jcona <command> [args]
+const USAGE = `usage: zhakram <command> [args]
 
 commands:
   build <src.zena> --world <ns:pkg/world@ver> --wit <dir> [-o out.component.wasm]

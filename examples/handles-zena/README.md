@@ -37,7 +37,7 @@ The build script also contains one guarded compiler-compatibility step. A zena
 `Error` currently retains the host-only `env.captureStackTrace -> externref`
 import even under DCE, while component imports cannot carry `externref`. The
 script requires exactly one known import and replaces it with an in-module
-null stack provider before the normal component embed/new and jcona transpile
+null stack provider before the normal component embed/new and zhakram transpile
 steps. This preserves zena's real exception handling and clear messages; it
 can be removed when the compiler emits its import-free component/WASI error
 implementation.

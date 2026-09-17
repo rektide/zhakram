@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Directory of this package (…/packages/jcona). */
+/** Directory of this package (…/packages/zhakram). */
 export const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Find `node_modules/.bin/<name>` walking up from `from`; undefined if absent. */

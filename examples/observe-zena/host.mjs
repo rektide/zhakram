@@ -5,12 +5,12 @@ import * as cli from '@bytecodealliance/preview2-shim/cli';
 import * as clocks from '@bytecodealliance/preview2-shim/clocks';
 import * as io from '@bytecodealliance/preview2-shim/io';
 import * as random from '@bytecodealliance/preview2-shim/random';
-import { createTracing, formatSpanLine } from '../../packages/jcona-otel/src/index.ts';
+import { createTracing, formatSpanLine } from '../../packages/zhakram-otel/src/index.ts';
 import {
 	formatObservationLine,
 	observationSummary,
 	observe,
-} from '../../packages/jcona-observe/src/index.ts';
+} from '../../packages/zhakram-observe/src/index.ts';
 
 const spans = [];
 const hostEvents = [];

@@ -17,9 +17,9 @@ browser.
 ```
 
 `run.sh` is thin calls into the repo pipeline tool
-([`packages/jcona`](../../packages/jcona/README.md)): `jcona build
---rust-artifact` (cargo component pass-through) → `jcona transpile` →
-`jcona run out --call pick --repeat 3`.
+([`packages/zhakram`](../../packages/zhakram/README.md)): `zhakram build
+--rust-artifact` (cargo component pass-through) → `zhakram transpile` →
+`zhakram run out --call pick --repeat 3`.
 
 Node output (emoji varies — the seed is host randomness):
 
@@ -70,6 +70,6 @@ Browser check (from the repo root — serves with ES-module MIME, then loads
 the page in headless Chrome):
 
 ```sh
-../../node_modules/.bin/jcona serve . --check examples/emoji-rs/index.html
+../../node_modules/.bin/zhakram serve . --check examples/emoji-rs/index.html
 # STATUS: EMOJI-RS-BROWSER-OK: 😉 😉 😀
 ```

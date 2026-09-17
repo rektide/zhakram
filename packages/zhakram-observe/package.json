@@ -1,5 +1,5 @@
 {
-	"name": "jcona-observe",
+	"name": "zhakram-observe",
 	"version": "0.1.0",
 	"description": "Host-side WASI dispatch observation and guarded jco runtime-table exposure",
 	"type": "module",

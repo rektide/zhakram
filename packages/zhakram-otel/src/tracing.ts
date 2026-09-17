@@ -9,7 +9,7 @@
  *
  * Wire it into an `-I async` transpiled component:
  *
- *     import { createTracing } from 'jcona-otel'; // or src/index.ts path
+ *     import { createTracing } from 'zhakram-otel'; // or src/index.ts path
  *     const m = await import('./out/demo.js');
  *     const inst = await m.instantiate(undefined, {
  *       'wasi:otel/tracing': createTracing(), // + the shim's wasi namespaces
@@ -81,7 +81,7 @@ export interface EndedSpan {
 	durationUs: bigint;
 }
 
-import type { EventSink } from 'jcona-observe/observe';
+import type { EventSink } from 'zhakram-observe/observe';
 
 /** Legacy pluggable span sink. The default logs one line per closed span. */
 export interface SpanSink {

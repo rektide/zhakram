@@ -3,11 +3,11 @@
 End-to-end host introspection in Node and Chrome. The zena guest reuses the
 known-green otel shape—nested guest spans, random, and stdout—while the host:
 
-- wraps its `-I async` imports with `jcona-observe`;
+- wraps its `-I async` imports with `zhakram-observe`;
 - sends guest spans and host dispatch events through one `emit` sink;
 - prints per-interface call/resource counters; and
 - reads the guarded `_util.resourceTables.snapshot()` injected by
-  `jcona transpile --expose-resources`.
+  `zhakram transpile --expose-resources`.
 
 Run both legs:
 
@@ -15,9 +15,9 @@ Run both legs:
 ./examples/observe-zena/run.sh
 ```
 
-The script is deliberately thin: `jcona build`, `jcona transpile
+The script is deliberately thin: `zhakram build`, `zhakram transpile
 --expose-resources -- -I async`, the Node host, two browser bundles, then
-`jcona serve --check`.
+`zhakram serve --check`.
 
 ## Representative Node trace
 
@@ -64,4 +64,4 @@ STATUS: OBSERVE-ZENA-BROWSER-OK: spans=4 hostCalls=31 resourceCalls=2 liveHandle
 
 The transform's exact `_util` contract, shape guard, limitations, and upstream
 js-component-bindgen PR sketch are documented in
-[`packages/jcona-observe`](/packages/jcona-observe/README.md).
+[`packages/zhakram-observe`](/packages/zhakram-observe/README.md).

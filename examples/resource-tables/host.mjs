@@ -3,7 +3,7 @@
  * resource-tables host: watch the guest's WASI 0.2 handle table breathe.
  *
  * Instantiate once, snapshot `_util.resourceTables.snapshot()` (injected by
- * `jcona transpile --expose-resources`), then call step1/step2/step3 and
+ * `zhakram transpile --expose-resources`), then call step1/step2/step3 and
  * print a compact table diff after each call. No otel anywhere — this is
  * pure resource-table introspection.
  *

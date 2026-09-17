@@ -1,4 +1,4 @@
-# jcona
+# zhakram
 
 > experiments and tools around zena wasm programming language and jco
 
@@ -24,23 +24,23 @@ frontier is a **bounded GO** per
 | [`examples/`](/examples/README.md) | fan-out per-example dirs (WIT contracts, JS hosts, Node + browser runs) |
 | [`crates/`](/crates/README.md) | Rust guest twins for the example worlds |
 | [`packages/`](/packages/README.md) | workspace package index |
-| [`packages/jcona/`](/packages/jcona/README.md) | the pipeline CLI: `jcona build / transpile / run / serve` over zena → wasm-tools → jco |
-| [`packages/jcona-otel/`](/packages/jcona-otel/README.md) | `wasi:otel/tracing` JS host: span stack + pluggable sink |
-| [`packages/jcona-observe/`](/packages/jcona-observe/README.md) | pure-JS WASI/resource dispatch observation + guarded jco runtime-table snapshots |
+| [`packages/zhakram/`](/packages/zhakram/README.md) | the pipeline CLI: `zhakram build / transpile / run / serve` over zena → wasm-tools → jco |
+| [`packages/zhakram-otel/`](/packages/zhakram-otel/README.md) | `wasi:otel/tracing` JS host: span stack + pluggable sink |
+| [`packages/zhakram-observe/`](/packages/zhakram-observe/README.md) | pure-JS WASI/resource dispatch observation + guarded jco runtime-table snapshots |
 | [`doc/research/`](/doc/README.md) | research notes + plan of record |
 
-## Quickstart (jcona CLI)
+## Quickstart (zhakram CLI)
 
-The front door is [`packages/jcona`](/packages/jcona/README.md) — the
-zena → wasm-tools → jco pipeline with sane defaults (`./node_modules/.bin/jcona`,
+The front door is [`packages/zhakram`](/packages/zhakram/README.md) — the
+zena → wasm-tools → jco pipeline with sane defaults (`./node_modules/.bin/zhakram`,
 env-overridable `ZENA_CLI` pointing at the fork checkout):
 
 ```sh
 cd examples/emoji-zena
-../../node_modules/.bin/jcona build pick.zena \
+../../node_modules/.bin/zhakram build pick.zena \
   --world zena-jco:emoji/emoji-picker@0.1.0 --wit wit -o emoji.component.wasm
-../../node_modules/.bin/jcona transpile emoji.component.wasm -o out
-../../node_modules/.bin/jcona run out --call pick --repeat 3   # 😃 😄 😁
+../../node_modules/.bin/zhakram transpile emoji.component.wasm -o out
+../../node_modules/.bin/zhakram run out --call pick --repeat 3   # 😃 😄 😁
 ```
 
 Or just run an example's script — `./run.sh` (emoji-zena, otel-zena,

@@ -25,7 +25,7 @@ table[0] (component 0): (empty)
 table[1] (component 0): 1=free, 2=live(rep 2, own)
 narrative: handle 1 acquired (step1) -> held alongside handle 2 (step2, guest
 wrote via 1) -> dropped (step3); handle 2 survived and served the final write.
-RESOURCE-TABLES-NODE-OK: live=1 dropped=1 shape=jcona-observe.resource-tables.v1 jco=@bytecodealliance/jco@1.33.0
+RESOURCE-TABLES-NODE-OK: live=1 dropped=1 shape=zhakram-observe.resource-tables.v1 jco=@bytecodealliance/jco@1.33.0
 ```
 
 ## What a resource table is
@@ -89,11 +89,11 @@ acquire/hold/drop story fits on stdout alone.
 like the one described above: `HANDLE_TABLES`, `RESOURCE_SCOPE_ID`,
 `INSTANCE_FLAGS`, and per-resource `captureTableN` maps (rep → live host
 object). These are module-internal — until the guarded codemod from
-[`packages/jcona-observe`](/packages/jcona-observe/README.md) rewrites the
+[`packages/zhakram-observe`](/packages/zhakram-observe/README.md) rewrites the
 generated entry:
 
 ```sh
-jcona transpile build/resource-tour.component.wasm \
+zhakram transpile build/resource-tour.component.wasm \
   -o build/resource-tour-out --expose-resources -- -I async
 ```
 
@@ -125,9 +125,9 @@ jcona transpile build/resource-tour.component.wasm \
 ./examples/resource-tables/run.sh
 ```
 
-The script: `jcona build` (zena `--dce` → `wasm-tools component embed` →
-`component new`), `jcona transpile --expose-resources -- -I async`, the
-Node host (`host.mjs` — the table diff above), then `jcona serve ../..
+The script: `zhakram build` (zena `--dce` → `wasm-tools component embed` →
+`component new`), `zhakram transpile --expose-resources -- -I async`, the
+Node host (`host.mjs` — the table diff above), then `zhakram serve ../..
 --check examples/resource-tables/index.html` for the browser leg.
 
 Browser output ends with the `#status` convention:

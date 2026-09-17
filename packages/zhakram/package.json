@@ -1,18 +1,18 @@
 {
-	"name": "jcona",
+	"name": "zhakram",
 	"version": "0.1.0",
-	"description": "pipeline tooling for the jcona experiments: zena → wasm-tools component → jco transpile → run/serve",
+	"description": "pipeline tooling for the zhakram experiments: zena → wasm-tools component → jco transpile → run/serve",
 	"type": "module",
 	"license": "MIT",
 	"bin": {
-		"jcona": "src/cli.ts"
+		"zhakram": "src/cli.ts"
 	},
 	"exports": {
 		".": "./src/index.ts"
 	},
 	"dependencies": {
 		"@bytecodealliance/jco": "^1.33.0",
-		"jcona-observe": "workspace:*"
+		"zhakram-observe": "workspace:*"
 	},
 	"devDependencies": {
 		"playwright": "^1.63.0"

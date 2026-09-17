@@ -1,5 +1,5 @@
 {
-	"name": "zena-jco",
+	"name": "zhakram",
 	"version": "1.0.0",
 	"description": "",
 	"main": "index.js",
@@ -24,7 +24,7 @@
 		"@bytecodealliance/preview2-shim": "^0.24.1"
 	},
 	"devDependencies": {
-		"jcona": "workspace:*",
+		"zhakram": "workspace:*",
 		"playwright": "^1.63.0"
 	}
 }

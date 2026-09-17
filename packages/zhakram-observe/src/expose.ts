@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 /** Generated-code shape this intentionally fragile transform is pinned to. */
 export const SUPPORTED_JCO_VERSION = '1.33.0';
 
-const MARKER = 'jcona-observe.resource-tables.v1';
+const MARKER = 'zhakram-observe.resource-tables.v1';
 const EXPECTED_DECLARATIONS = [
 	['RESOURCE_SCOPE_ID', /\blet RESOURCE_SCOPE_ID = 0;/g],
 	['RESOURCE_SCOPE_TASKS', /\bconst RESOURCE_SCOPE_TASKS = new Map\(\);/g],
@@ -25,11 +25,11 @@ export interface ExposeResourceTablesOptions {
 }
 
 const MODULE_HELPERS = `
-// ${MARKER}; injected by jcona-observe for @bytecodealliance/jco ${SUPPORTED_JCO_VERSION} output.
-const __jconaObserveResourceViews = new Map();
-let __jconaObserveNextResourceViewId = 0;
+// ${MARKER}; injected by zhakram-observe for @bytecodealliance/jco ${SUPPORTED_JCO_VERSION} output.
+const __zhakramObserveResourceViews = new Map();
+let __zhakramObserveNextResourceViewId = 0;
 
-function __jconaObserveSummarize(value, seen = new WeakSet(), depth = 0) {
+function __zhakramObserveSummarize(value, seen = new WeakSet(), depth = 0) {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
   if (typeof value === 'undefined') return { type: 'undefined' };
   if (typeof value === 'bigint') return { type: 'bigint', value: value.toString() };
@@ -39,35 +39,35 @@ function __jconaObserveSummarize(value, seen = new WeakSet(), depth = 0) {
   if (seen.has(value)) return { type: 'circular' };
   seen.add(value);
   if (Array.isArray(value)) {
-    return { type: 'array', length: value.length, items: value.slice(0, 16).map(item => __jconaObserveSummarize(item, seen, depth + 1)) };
+    return { type: 'array', length: value.length, items: value.slice(0, 16).map(item => __zhakramObserveSummarize(item, seen, depth + 1)) };
   }
   if (ArrayBuffer.isView(value)) return { type: value.constructor.name, length: value.byteLength };
-  if (value instanceof Map) return __jconaObserveSnapshotMap(value);
+  if (value instanceof Map) return __zhakramObserveSnapshotMap(value);
   let globalValue;
   if (typeof WebAssembly !== 'undefined' && value instanceof WebAssembly.Global) {
-    globalValue = __jconaObserveSummarize(value.value, seen, depth + 1);
+    globalValue = __zhakramObserveSummarize(value.value, seen, depth + 1);
   }
   const type = value.constructor?.name || 'Object';
   if (depth >= 2) return globalValue === undefined ? { type } : { type, value: globalValue };
   const fields = {};
   for (const key of Object.keys(value).slice(0, 16)) {
-    try { fields[key] = __jconaObserveSummarize(value[key], seen, depth + 1); }
+    try { fields[key] = __zhakramObserveSummarize(value[key], seen, depth + 1); }
     catch (error) { fields[key] = { type: 'unavailable', message: String(error) }; }
   }
   return globalValue === undefined ? { type, fields } : { type, value: globalValue, fields };
 }
 
-function __jconaObserveSnapshotMap(map) {
+function __zhakramObserveSnapshotMap(map) {
   return {
     size: map.size,
     entries: [...map].map(([key, value]) => ({
-      key: __jconaObserveSummarize(key),
-      value: __jconaObserveSummarize(value),
+      key: __zhakramObserveSummarize(key),
+      value: __zhakramObserveSummarize(value),
     })),
   };
 }
 
-function __jconaObserveSnapshotHandleTable(table, tableIndex) {
+function __zhakramObserveSnapshotHandleTable(table, tableIndex) {
   const flag = 1 << 30;
   const entries = [];
   for (let handle = 1; handle < table.length / 2; handle++) {
@@ -94,28 +94,28 @@ function __jconaObserveSnapshotHandleTable(table, tableIndex) {
   };
 }
 
-function __jconaObserveDeepFreeze(value) {
+function __zhakramObserveDeepFreeze(value) {
   if (value === null || typeof value !== 'object' || Object.isFrozen(value)) return value;
-  for (const child of Object.values(value)) __jconaObserveDeepFreeze(child);
+  for (const child of Object.values(value)) __zhakramObserveDeepFreeze(child);
   return Object.freeze(value);
 }
 
-function __jconaObserveRegisterResourceView(snapshot) {
-  const id = ++__jconaObserveNextResourceViewId;
-  __jconaObserveResourceViews.set(id, snapshot);
+function __zhakramObserveRegisterResourceView(snapshot) {
+  const id = ++__zhakramObserveNextResourceViewId;
+  __zhakramObserveResourceViews.set(id, snapshot);
   return id;
 }
 
-function __jconaObserveSnapshotResourceTables() {
-  return __jconaObserveDeepFreeze({
+function __zhakramObserveSnapshotResourceTables() {
+  return __zhakramObserveDeepFreeze({
     shape: '${MARKER}',
     generatedFor: '@bytecodealliance/jco@${SUPPORTED_JCO_VERSION}',
-    instances: [...__jconaObserveResourceViews].map(([id, snapshot]) => ({ id, ...snapshot() })),
+    instances: [...__zhakramObserveResourceViews].map(([id, snapshot]) => ({ id, ...snapshot() })),
   });
 }
 
-const __jconaObserveResourceTables = Object.freeze({
-  snapshot: __jconaObserveSnapshotResourceTables,
+const __zhakramObserveResourceTables = Object.freeze({
+  snapshot: __zhakramObserveSnapshotResourceTables,
 });
 `;
 
@@ -143,7 +143,7 @@ export function transformResourceExposure(source: string): ResourceExposureResul
 	if (utilCount !== 1) problems.push(`_util export count was ${utilCount}, expected 1`);
 
 	if (problems.length) {
-		const warning = `jcona-observe: resource exposure skipped; generated code does not match the pinned @bytecodealliance/jco ${SUPPORTED_JCO_VERSION} shape (${problems.join('; ')})`;
+		const warning = `zhakram-observe: resource exposure skipped; generated code does not match the pinned @bytecodealliance/jco ${SUPPORTED_JCO_VERSION} shape (${problems.join('; ')})`;
 		return { status: 'skipped', source, tables: [], warnings: [warning] };
 	}
 
@@ -153,7 +153,7 @@ export function transformResourceExposure(source: string): ResourceExposureResul
 			status: 'skipped',
 			source,
 			tables: [],
-			warnings: [`jcona-observe: resource exposure skipped; malformed generated module header`],
+			warnings: [`zhakram-observe: resource exposure skipped; malformed generated module header`],
 		};
 	}
 	let transformed = `${source.slice(0, directiveEnd + 1)}${MODULE_HELPERS}${source.slice(directiveEnd + 1)}`;
@@ -161,26 +161,26 @@ export function transformResourceExposure(source: string): ResourceExposureResul
 	transformed = transformed.replace(
 		/^([ \t]*)const INSTANCE_FLAGS = new Map\(\);/m,
 		(_match, indent: string) => `${indent}const INSTANCE_FLAGS = new Map();\n`
-			+ `${indent}const __jconaObserveCaptureTables = Object.create(null);\n`
-			+ `${indent}__jconaObserveRegisterResourceView(() => ({\n`
+			+ `${indent}const __zhakramObserveCaptureTables = Object.create(null);\n`
+			+ `${indent}__zhakramObserveRegisterResourceView(() => ({\n`
 			+ `${indent}  resourceScopeId: RESOURCE_SCOPE_ID,\n`
-			+ `${indent}  resourceScopeTasks: __jconaObserveSnapshotMap(RESOURCE_SCOPE_TASKS),\n`
-			+ `${indent}  asyncTasksByComponentIdx: __jconaObserveSnapshotMap(ASYNC_TASKS_BY_COMPONENT_IDX),\n`
-			+ `${indent}  asyncState: __jconaObserveSnapshotMap(ASYNC_STATE),\n`
-			+ `${indent}  instanceFlags: __jconaObserveSnapshotMap(INSTANCE_FLAGS),\n`
-			+ `${indent}  handleTables: HANDLE_TABLES.map(__jconaObserveSnapshotHandleTable),\n`
-			+ `${indent}  captureTables: Object.fromEntries(Object.entries(__jconaObserveCaptureTables)\n`
-			+ `${indent}    .map(([name, table]) => [name, __jconaObserveSnapshotMap(table)])),\n`
+			+ `${indent}  resourceScopeTasks: __zhakramObserveSnapshotMap(RESOURCE_SCOPE_TASKS),\n`
+			+ `${indent}  asyncTasksByComponentIdx: __zhakramObserveSnapshotMap(ASYNC_TASKS_BY_COMPONENT_IDX),\n`
+			+ `${indent}  asyncState: __zhakramObserveSnapshotMap(ASYNC_STATE),\n`
+			+ `${indent}  instanceFlags: __zhakramObserveSnapshotMap(INSTANCE_FLAGS),\n`
+			+ `${indent}  handleTables: HANDLE_TABLES.map(__zhakramObserveSnapshotHandleTable),\n`
+			+ `${indent}  captureTables: Object.fromEntries(Object.entries(__zhakramObserveCaptureTables)\n`
+			+ `${indent}    .map(([name, table]) => [name, __zhakramObserveSnapshotMap(table)])),\n`
 			+ `${indent}}));`,
 	);
 	transformed = transformed.replace(
 		/^([ \t]*)(const (captureTable\d+)\s*=\s*new Map\(\);)/gm,
 		(_match, indent: string, declaration: string, name: string) =>
-			`${indent}${declaration}\n${indent}__jconaObserveCaptureTables.${name} = ${name};`,
+			`${indent}${declaration}\n${indent}__zhakramObserveCaptureTables.${name} = ${name};`,
 	);
 	transformed = transformed.replace(
 		/export const _util = \{/,
-		'export const _util = {\n  resourceTables: __jconaObserveResourceTables,',
+		'export const _util = {\n  resourceTables: __zhakramObserveResourceTables,',
 	);
 
 	return { status: 'transformed', source: transformed, tables, warnings: [] };

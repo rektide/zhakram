@@ -1,4 +1,4 @@
-// Import + invocation helper for transpiled components (the `jcona run` leg).
+// Import + invocation helper for transpiled components (the `zhakram run` leg).
 //
 // The module-shape gotcha this exists for (found in W4, see
 // examples/interop-static): jco transpile exports interface exports under the

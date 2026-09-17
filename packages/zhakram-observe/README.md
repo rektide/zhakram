@@ -1,4 +1,4 @@
-# packages/jcona-observe
+# packages/zhakram-observe
 
 Host-side visibility for jco components, in two deliberately separate tiers:
 
@@ -12,7 +12,7 @@ Host-side visibility for jco components, in two deliberately separate tiers:
 
 ```js
 import * as io from '@bytecodealliance/preview2-shim/io';
-import { observationSummary, observe } from 'jcona-observe/observe';
+import { observationSummary, observe } from 'zhakram-observe/observe';
 
 const sink = {
   emit(event) {
@@ -59,10 +59,10 @@ the first sighting emits `resource-acquire`. Explicit `drop`, `dispose`, or
 }
 ```
 
-### Shared sink with jcona-otel
+### Shared sink with zhakram-otel
 
 `EventSink<T> = { emit(event: T): void }` is the common sink shape. Existing
-`jcona-otel` `{ onSpan(ended) {} }` sinks remain valid; `createTracing` also
+`zhakram-otel` `{ onSpan(ended) {} }` sinks remain valid; `createTracing` also
 accepts `EventSink<EndedSpan>`. One `emit` sink can therefore receive guest
 spans and host dispatch events in their actual interleaving. See
 [`examples/observe-zena`](/examples/observe-zena/README.md).
@@ -76,15 +76,15 @@ internal handle transition. That boundary is why Tier 2 exists.
 
 ## Tier 2: guarded generated-table snapshots
 
-The jcona CLI wires the transform after transpilation:
+The zhakram CLI wires the transform after transpilation:
 
 ```sh
-jcona transpile component.wasm -o out --expose-resources -- -I async
+zhakram transpile component.wasm -o out --expose-resources -- -I async
 ```
 
 The library entry is also exported as
 `exposeResourceTables(file)` / `transformResourceExposure(source)` from
-`jcona-observe/expose`. On the known shape it adds:
+`zhakram-observe/expose`. On the known shape it adds:
 
 ```js
 componentModule._util.resourceTables.snapshot()
@@ -94,7 +94,7 @@ The returned, deeply frozen copy has this shape:
 
 ```text
 {
-  shape: "jcona-observe.resource-tables.v1",
+  shape: "zhakram-observe.resource-tables.v1",
   generatedFor: "@bytecodealliance/jco@1.33.0",
   instances: [{
     id,

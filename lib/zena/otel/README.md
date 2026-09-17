@@ -36,5 +36,5 @@ export let run = (): void => {
 
 End-to-end proof: [`examples/otel-zena`](/examples/otel-zena/README.md)
 (nested spans observed by the JS host, Node + browser). Host side:
-[`packages/jcona-otel`](/packages/jcona-otel/README.md). Vendored WIT with
+[`packages/zhakram-otel`](/packages/zhakram-otel/README.md). Vendored WIT with
 the full ABI lowering table: [`examples/otel-zena/README.md`](/examples/otel-zena/README.md).

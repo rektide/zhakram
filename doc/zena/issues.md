@@ -1,6 +1,6 @@
 ---
 type: Issue-ledger
-title: "zena defects encountered via jcona"
+title: "zena defects encountered via zhakram"
 description: Narrative ledger of every zena compiler defect found by exercising zena through the jco componentization pipeline — symptom, root cause, repro, fix, verification, and status for each; plus adjacent non-zena defects hit along the way.
 resource: https://github.com/rektide/zena-jco/blob/main/doc/zena/issues.md
 tags: [zena, jco, wasm-gc, component-model, defects, dce, fork]
@@ -27,7 +27,7 @@ sources:
     title: fork commits d451bd5f79d3, f60315594281, 048e345ccdc4, 691d8ed04dfb + cde81fc2a952
 ---
 
-# zena defects encountered via jcona
+# zena defects encountered via zhakram
 
 Every defect in this ledger was found the same way: zena compiled a program
 fine by its own lights, and the module only broke when pushed through
@@ -166,7 +166,7 @@ whole under DCE")
 - **Verification.** Regression compiles minimal `String +` and `String +=`
   with `dce: true`, asserts `WebAssembly.validate`, instantiates, and
   asserts the result: pre-fix 1 fail (validation false), post-fix 9/9
-  operator-DCE tests pass. Suite 2313 tests, 2299 pass / 0 fail. The jcona
+  operator-DCE tests pass. Suite 2313 tests, 2299 pass / 0 fail. The zhakram
   concat repro validates under `--dce`. Lib/example code no longer needs to
   avoid concat.
 - **Status:** RESOLVED 2026-09-16.
@@ -242,7 +242,7 @@ workaround shipped.**
   mirroring the existing console module swap seam
   (`resolveStdlibImport`) — the clean fork fix, and exactly the shape of
   the E1-era reverted experiment, chosen before we knew it was
-  load-bearing; (b) lazy capture on first `getStackTrace()`; (c) jcona
+  load-bearing; (b) lazy capture on first `getStackTrace()`; (c) zhakram
   build absorbs the rewrite. Acceptance: an exception-using component
   componentizes with `--dce` alone; fork suite green; handles-zena drops
   its guard.
@@ -259,7 +259,7 @@ workaround shipped.**
 ---
 
 
-**RESOLVED 2026-09-16 — fork `wwtoztqk` (zenajco-f1d-stacktraces).** Target-conditional stdlib, triggered by `--dce` (not a new target): `error/component.zena` (no StackRef/env externals, `getStackTrace() -> null`) selected via a new `dce` axis on the stdlib manifest, mirroring the console swap. Lazy capture was rejected on evidence — real trace consumers read traces after the throwing frame unwound (`packages/zena-compiler/zena/test/backtrace_test.zena`, `zena-cli` main.rs:735+), which read-time capture cannot serve. Verified: dce'd throwing program → 0 env imports, componentizes, catches correctly; non-dce builds byte-identical; suite 2304 pass / 0 fail (5 new tests). `examples/handles-zena` dropped its WAT guard (jcona `feaed184`) with identical output. F2 note: a `--target component` can re-key the same manifest seam in one line.
+**RESOLVED 2026-09-16 — fork `wwtoztqk` (zenajco-f1d-stacktraces).** Target-conditional stdlib, triggered by `--dce` (not a new target): `error/component.zena` (no StackRef/env externals, `getStackTrace() -> null`) selected via a new `dce` axis on the stdlib manifest, mirroring the console swap. Lazy capture was rejected on evidence — real trace consumers read traces after the throwing frame unwound (`packages/zena-compiler/zena/test/backtrace_test.zena`, `zena-cli` main.rs:735+), which read-time capture cannot serve. Verified: dce'd throwing program → 0 env imports, componentizes, catches correctly; non-dce builds byte-identical; suite 2304 pass / 0 fail (5 new tests). `examples/handles-zena` dropped its WAT guard (zhakram `feaed184`) with identical output. F2 note: a `--target component` can re-key the same manifest seam in one line.
 
 ## UNRESOLVED
 
@@ -271,7 +271,7 @@ workaround shipped.**
   (`@bytecodealliance/preview2-shim`, browser build): every `get-stdout()`
   returns a fresh *own* handle bound to the **same shared** stdout
   `OutputStream` singleton (two table reps, one JS object — exposed by the
-  jcona-observe `captureTables` snapshot). The browser shim's
+  zhakram-observe `captureTables` snapshot). The browser shim's
   `OutputStream` flips `#open = false` on dispose, so dropping ANY handle
   closes stdout for ALL surviving handles → subsequent writes throw
   `{tag:"closed"}`. Node's shim has no such flag, which is why it never

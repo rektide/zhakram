@@ -29,13 +29,13 @@ export const _util = {
 test('injects a per-instantiation, immutable _util snapshot view', async () => {
 	const result = transformResourceExposure(GENERATED_FIXTURE);
 	assert.equal(result.status, 'transformed');
-	assert.match(result.source, /resourceTables: __jconaObserveResourceTables/);
+	assert.match(result.source, /resourceTables: __zhakramObserveResourceTables/);
 	const url = `data:text/javascript;base64,${Buffer.from(result.source).toString('base64')}`;
 	const generated = await import(url);
 	generated.instantiate();
 	generated.instantiate();
 	const snapshot = generated._util.resourceTables.snapshot();
-	assert.equal(snapshot.shape, 'jcona-observe.resource-tables.v1');
+	assert.equal(snapshot.shape, 'zhakram-observe.resource-tables.v1');
 	assert.equal(snapshot.instances.length, 2);
 	assert.equal(snapshot.instances[0].resourceScopeId, 1);
 	assert.equal(snapshot.instances[0].resourceScopeTasks.size, 1);

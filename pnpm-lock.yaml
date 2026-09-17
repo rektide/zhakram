@@ -15,27 +15,27 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
     devDependencies:
-      jcona:
-        specifier: workspace:*
-        version: link:packages/jcona
       playwright:
         specifier: ^1.63.0
         version: 1.63.0
+      zhakram:
+        specifier: workspace:*
+        version: 'link:'
 
-  packages/jcona:
+  packages/zhakram:
     dependencies:
       '@bytecodealliance/jco':
         specifier: ^1.33.0
         version: 1.33.0
-      jcona-observe:
+      zhakram-observe:
         specifier: workspace:*
-        version: link:../jcona-observe
+        version: link:../zhakram-observe
     devDependencies:
       playwright:
         specifier: ^1.63.0
         version: 1.63.0
 
-  packages/jcona-observe:
+  packages/zhakram-observe:
     devDependencies:
       '@types/node':
         specifier: ^22.20.2
@@ -47,11 +47,11 @@ importers:
         specifier: ^0.23.0
         version: 0.23.0(@typescript/native-preview@7.0.0-dev.20260707.2)(typescript@7.0.2)
 
-  packages/jcona-otel:
+  packages/zhakram-otel:
     dependencies:
-      jcona-observe:
+      zhakram-observe:
         specifier: workspace:*
-        version: link:../jcona-observe
+        version: link:../zhakram-observe
     devDependencies:
       tsdown:
         specifier: latest

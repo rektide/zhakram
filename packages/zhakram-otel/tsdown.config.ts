@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-// Browser-facing ESM build: examples serve /packages/jcona-otel/dist/tracing.js
+// Browser-facing ESM build: examples serve /packages/zhakram-otel/dist/tracing.js
 // through an import-map entry (node hosts import the .ts source directly).
 export default defineConfig({
 	entry: ['src/tracing.ts'],

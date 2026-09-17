@@ -1,6 +1,6 @@
 // The pipeline: zena source → core wasm → component embed → component new,
 // and the jco transpile step. Every example in this repo runs some prefix of
-// these stages; jcona exists so they stop hand-rolling it.
+// these stages; zhakram exists so they stop hand-rolling it.
 //
 // Stage intermediates keep the naming the examples already use: for an output
 // `emoji.component.wasm`, the core/embed artifacts land next to it as
@@ -8,7 +8,7 @@
 import { copyFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import { exposeResourceTables } from 'jcona-observe/expose';
+import { exposeResourceTables } from 'zhakram-observe/expose';
 
 import { sh } from './exec.ts';
 import { toolPaths } from './config.ts';

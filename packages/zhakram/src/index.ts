@@ -1,4 +1,4 @@
-// jcona library surface — everything the bin wires together, importable for
+// zhakram library surface — everything the bin wires together, importable for
 // hosts that drive the pipeline programmatically (the interop-matrix style).
 export { findBin, pkgRoot, toolPaths, type ToolPaths } from './config.ts';
 export { sh } from './exec.ts';

@@ -1,4 +1,4 @@
-# packages/jcona-otel
+# packages/zhakram-otel
 
 JS host side for `wasi:otel/tracing@0.2.0-rc.2` guests — the piece
 [`lib/zena/otel`](/lib/zena/otel/otel.zena) zena components call into. jco's
@@ -15,7 +15,7 @@ values, already lifted), so this package is deliberately small:
   `depth`/`durationUs` — everything an OTLP exporter needs — so an OTLP sink
   can slot in without touching guests.
 - **Sinks compose with host observation.** The original `{ onSpan(ended) }`
-  shape remains supported. `createTracing` also accepts jcona-observe's generic
+  shape remains supported. `createTracing` also accepts zhakram-observe's generic
   `{ emit(event) }` `EventSink`, so one sink can render guest spans and host
   dispatch/resource events in their real interleaving.
 - **Runtime hosts**: Node imports `./src/index.ts` directly (node
@@ -26,7 +26,7 @@ values, already lifted), so this package is deliberately small:
 Wiring shape (instantiation mode, all imports from the host object):
 
 ```js
-import { createTracing } from 'jcona-otel';
+import { createTracing } from 'zhakram-otel';
 const m = await import('./out/demo.js');
 const inst = await m.instantiate(undefined, {
   'wasi:otel/tracing': createTracing(),

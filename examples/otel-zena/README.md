@@ -3,8 +3,8 @@
 A zena component emitting **observable spans** through
 [`wasi:otel/tracing@0.2.0-rc.2`](https://github.com/WebAssembly/wasi-otel) —
 hand-lowered externals from [`lib/zena/otel`](/lib/zena/otel/otel.zena), a JS
-host implementation in [`packages/jcona-otel`](/packages/jcona-otel/README.md),
-both wired up with [`packages/jcona`](/packages/jcona/README.md) tooling.
+host implementation in [`packages/zhakram-otel`](/packages/zhakram-otel/README.md),
+both wired up with [`packages/zhakram`](/packages/zhakram/README.md) tooling.
 
 The guest picks a random emoji inside nested spans; the host sink prints one
 line per closed span as the guest's `on-end` calls fire (Node and browser):
@@ -24,7 +24,7 @@ via `current-span-context`, per wasi-otel's host-owns-propagation model.
 ## Interface decision: real wasi:otel, hand-lowered (option a)
 
 The ticket allowed either (a) hand-written zena externals against
-wasi-otel's tracing interface, or (b) a minimal custom `jcona:otel` world
+wasi-otel's tracing interface, or (b) a minimal custom `zhakram:otel` world
 with wasi-otel as a migration target. **We shipped (a)** — no custom
 telemetry interface exists in this repo. A probe component exercised every
 tracing function shape end-to-end before the library was written; nothing
@@ -82,9 +82,9 @@ control, per the repo's host-mediated-composition posture.)
 ./run.sh
 ```
 
-Thin `jcona` calls: `jcona build` → `jcona transpile -- -I async` →
-`node host.mjs` (Node) → `pnpm -C packages/jcona-otel build` →
-`jcona serve <repo-root> --check examples/otel-zena/index.html` (headless
+Thin `zhakram` calls: `zhakram build` → `zhakram transpile -- -I async` →
+`node host.mjs` (Node) → `pnpm -C packages/zhakram-otel build` →
+`zhakram serve <repo-root> --check examples/otel-zena/index.html` (headless
 Chrome; the page reports `OTEL-ZENA-BROWSER-OK` + the span lines).
 
 - [`demo.zena`](demo.zena) — the guest: `startSpan`/`setSpanAttr`/`endSpan`
@@ -92,7 +92,7 @@ Chrome; the page reports `OTEL-ZENA-BROWSER-OK` + the span lines).
   to lower `current-span-context` results.
 - [`host.mjs`](host.mjs) — Node host: `createTracing()` sink + shim imports.
 - [`index.html`](index.html) — browser twin: shim browser builds + the
-  jcona-otel dist via import map, spans collected into `#status`.
+  zhakram-otel dist via import map, spans collected into `#status`.
 
 ## v1 limits
 

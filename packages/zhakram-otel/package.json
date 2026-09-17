@@ -1,5 +1,5 @@
 {
-	"name": "jcona-otel",
+	"name": "zhakram-otel",
 	"version": "0.1.0",
 	"description": "JS host side for wasi:otel tracing guests (zena components via jco): current-span stack + pluggable span sink",
 	"type": "module",
@@ -14,6 +14,6 @@
 		"tsdown": "latest"
 	},
 	"dependencies": {
-		"jcona-observe": "workspace:*"
+		"zhakram-observe": "workspace:*"
 	}
 }

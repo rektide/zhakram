@@ -2,7 +2,7 @@
 set -e
 
 cd "$(dirname "$0")"
-JCONA=${JCONA:-../../node_modules/.bin/jcona}
+ZHAKRAM=${ZHAKRAM:-../../node_modules/.bin/zhakram}
 ZENA_CLI=${ZENA_CLI:-$HOME/src/zena-jco-fork/packages/cli/lib/cli.js}
 WASM_TOOLS=${WASM_TOOLS:-wasm-tools}
 
@@ -16,6 +16,6 @@ node "$ZENA_CLI" build handles-demo.zena --dce -o build/handles-demo.core.wasm
 "$WASM_TOOLS" component new build/handles-demo.embed.wasm \
   -o build/handles-demo.component.wasm
 
-"$JCONA" transpile build/handles-demo.component.wasm \
+"$ZHAKRAM" transpile build/handles-demo.component.wasm \
   -o build/handles-demo-out -- -I async
 node host.mjs
