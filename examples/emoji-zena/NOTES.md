@@ -28,7 +28,7 @@ inline tuple return produces the intended core Wasm signature:
 (func $pick (result i32 i32))
 ```
 
-Embedding the `zena-jco:emoji/emoji-picker@0.1.0` world also succeeds. The next
+Embedding the `zhakram:emoji/emoji-picker@0.1.0` world also succeeds. The next
 pipeline step fails under `wasm-tools 1.245.1`:
 
 ```text

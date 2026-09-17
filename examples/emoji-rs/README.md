@@ -8,7 +8,7 @@ browser.
 - guest: [`../../crates/emoji-rs`](../../crates/emoji-rs) (xorshift64\* seeded
   from `wasi:random/random`, fixed 8-smiley set)
 - contract: [`../emoji-wit/wit/emoji.wit`](../emoji-wit/wit/emoji.wit) —
-  world `rektide:zena-jco/emoji-picker@0.1.0`
+  world `rektide:zhakram/emoji-picker@0.1.0`
 
 ## Run
 

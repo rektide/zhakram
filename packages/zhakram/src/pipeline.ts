@@ -19,7 +19,7 @@ export function wasmStem(file: string): string {
 }
 
 export interface BuildOptions {
-	/** Fully-qualified WIT world, e.g. `zena-jco:emoji/emoji-picker@0.1.0`. */
+	/** Fully-qualified WIT world, e.g. `zhakram:emoji/emoji-picker@0.1.0`. */
 	world?: string;
 	/** Directory holding the WIT package for `component embed`. */
 	wit?: string;

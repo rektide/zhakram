@@ -534,7 +534,7 @@ package wasi:random@0.2.12 {
   }
 }
 
-package zena-jco:p2@0.1.0 {
+package zhakram:p2@0.1.0 {
   world p2-hello {
     import wasi:cli/stdout@0.2.12;
     import wasi:io/streams@0.2.12;
@@ -542,7 +542,7 @@ package zena-jco:p2@0.1.0 {
   }
 }
 
-package zena-jco:emoji@0.1.0 {
+package zhakram:emoji@0.1.0 {
   world emoji-picker {
     import wasi:random/random@0.2.12;
     export pick: func() -> string;

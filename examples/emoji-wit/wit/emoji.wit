@@ -1,4 +1,4 @@
-package rektide:zena-jco@0.1.0;
+package rektide:zhakram@0.1.0;
 
 world emoji-picker {
   /// Source of the seed for the emoji shuffle. The host satisfies this with

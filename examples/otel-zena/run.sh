@@ -10,7 +10,7 @@ root=../..
 
 # 1. component: zena --dce → wasm-tools component embed/new
 "$ZHAKRAM" build demo.zena \
-  --world zena-jco:otel/otel-demo@0.1.0 --wit wit \
+  --world zhakram:otel/otel-demo@0.1.0 --wit wit \
   -o build/otel-demo.component.wasm
 
 # 2. transpile in instantiation mode: every import (wasi:otel/tracing

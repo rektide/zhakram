@@ -1,4 +1,4 @@
-//! `emoji-rs` — Rust implementation of the `rektide:zena-jco/emoji-picker`
+//! `emoji-rs` — Rust implementation of the `rektide:zhakram/emoji-picker`
 //! world (shared WIT: `examples/emoji-wit/wit/emoji.wit`).
 //!
 //! `pick()` returns one emoji from a fixed smiley set. The shuffle is an

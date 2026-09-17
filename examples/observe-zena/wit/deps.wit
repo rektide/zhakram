@@ -534,7 +534,7 @@ package wasi:random@0.2.12 {
   }
 }
 
-package zena-jco:p2@0.1.0 {
+package zhakram:p2@0.1.0 {
   world p2-hello {
     import wasi:cli/stdout@0.2.12;
     import wasi:io/streams@0.2.12;
@@ -719,7 +719,7 @@ interface tracing {
 }
 
 
-package zena-jco:observe@0.1.0 {
+package zhakram:observe@0.1.0 {
   world observe-demo {
     import wasi:otel/tracing@0.2.0-rc.2;
     import wasi:clocks/wall-clock@0.2.12;

@@ -6,7 +6,7 @@ ZHAKRAM=${ZHAKRAM:-../../node_modules/.bin/zhakram}
 root=../..
 
 "$ZHAKRAM" build demo.zena \
-  --world zena-jco:observe/observe-demo@0.1.0 --wit wit \
+  --world zhakram:observe/observe-demo@0.1.0 --wit wit \
   -o build/observe-demo.component.wasm
 
 "$ZHAKRAM" transpile build/observe-demo.component.wasm \

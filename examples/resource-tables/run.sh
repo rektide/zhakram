@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 ZHAKRAM=${ZHAKRAM:-../../node_modules/.bin/zhakram}
 
 "$ZHAKRAM" build resource-tour.zena \
-  --world zena-jco:rtour/resource-tour@0.1.0 --wit wit \
+  --world zhakram:rtour/resource-tour@0.1.0 --wit wit \
   -o build/resource-tour.component.wasm
 
 "$ZHAKRAM" transpile build/resource-tour.component.wasm \

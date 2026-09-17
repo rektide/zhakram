@@ -153,7 +153,7 @@ sides of it.
   `[resource-drop]output-stream`, three step exports, handles in module
   globals.
 - [`wit/deps.wit`](wit/deps.wit) — vendored WASI 0.2.12 tree plus the
-  `zena-jco:rtour/resource-tour@0.1.0` world (imports stdout + streams;
+  `zhakram:rtour/resource-tour@0.1.0` world (imports stdout + streams;
   exports `step1`/`step2`/`step3`).
 - [`host.mjs`](host.mjs) — Node host: instantiate once, snapshot between
   calls, print added/removed handles and the live count, assert the final

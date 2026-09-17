@@ -38,7 +38,7 @@ env-overridable `ZENA_CLI` pointing at the fork checkout):
 ```sh
 cd examples/emoji-zena
 ../../node_modules/.bin/zhakram build pick.zena \
-  --world zena-jco:emoji/emoji-picker@0.1.0 --wit wit -o emoji.component.wasm
+  --world zhakram:emoji/emoji-picker@0.1.0 --wit wit -o emoji.component.wasm
 ../../node_modules/.bin/zhakram transpile emoji.component.wasm -o out
 ../../node_modules/.bin/zhakram run out --call pick --repeat 3   # 😃 😄 😁
 ```

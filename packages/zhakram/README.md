@@ -60,7 +60,7 @@ drive the pipeline programmatically — the
 Recorded while converting [`examples/emoji-rs`](/examples/emoji-rs/README.md)
 (the end-to-end proof):
 
-- zena leg: `zhakram build …/pick.zena --world zena-jco:emoji/emoji-picker@0.1.0
+- zena leg: `zhakram build …/pick.zena --world zhakram:emoji/emoji-picker@0.1.0
   --wit …/wit -o emoji.component.wasm` → `zhakram transpile` → `zhakram run
   emoji-out --call pick --repeat 3` prints three emoji.
 - command leg (the object-shape gotcha): `zhakram run .test-agent/w4/composed-out`

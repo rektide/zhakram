@@ -534,7 +534,7 @@ package wasi:random@0.2.12 {
   }
 }
 
-package zena-jco:p2@0.1.0 {
+package zhakram:p2@0.1.0 {
   world p2-hello {
     import wasi:cli/stdout@0.2.12;
     import wasi:io/streams@0.2.12;
@@ -544,7 +544,7 @@ package zena-jco:p2@0.1.0 {
 
 // resource-tour: three exports that acquire, hold, and drop WASI 0.2
 // resources so the host can watch the guest's handle table breathe.
-package zena-jco:rtour@0.1.0 {
+package zhakram:rtour@0.1.0 {
   world resource-tour {
     import wasi:cli/stdout@0.2.12;
     import wasi:io/streams@0.2.12;
@@ -554,7 +554,7 @@ package zena-jco:rtour@0.1.0 {
   }
 }
 
-package zena-jco:handles@0.1.0 {
+package zhakram:handles@0.1.0 {
   world handles-demo {
     import wasi:cli/stdout@0.2.12;
     import wasi:io/streams@0.2.12;

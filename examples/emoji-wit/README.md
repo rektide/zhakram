@@ -7,7 +7,7 @@ files; neither owns the definitions.
 
 ## Packages
 
-- [`wit/emoji.wit`](wit/emoji.wit) — package `rektide:zena-jco@0.1.0`
+- [`wit/emoji.wit`](wit/emoji.wit) — package `rektide:zhakram@0.1.0`
   - world `emoji-picker`: exports `pick: func() -> string` (one smiley from a
     fixed set). Imports `wasi:random/random@0.2.0` for the shuffle seed — a
     host-side concern (jco preview2-shim or a WASI P2 host), not part of the

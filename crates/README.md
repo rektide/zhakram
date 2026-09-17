@@ -8,7 +8,7 @@ directly to `wasm32-wasip2`.
 | Crate | Implements | What |
 | --- | --- | --- |
 | [`rng-rs/`](rng-rs/) | `rektide:interop/rng-source` | deterministic xorshift64* `next()` — fixed seed so composed runs are reproducible |
-| [`emoji-rs/`](emoji-rs/) | `rektide:zena-jco/emoji-picker` | `pick()` returns one of 8 smileys, seeded from `wasi:random/random` |
+| [`emoji-rs/`](emoji-rs/) | `rektide:zhakram/emoji-picker` | `pick()` returns one of 8 smileys, seeded from `wasi:random/random` |
 | [`consume-rs/`](consume-rs/) | `rektide:interop/rng-reader` + `rng-reader-command` | lib draws 5 rng numbers as a comma string; cmd variant prints them to wasi stdout |
 
 ## Build

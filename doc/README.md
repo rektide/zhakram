@@ -1,6 +1,7 @@
 # doc/
 
-Topic documentation for zena-jco. Inquiry and drafts live in subdirectories
+Topic documentation for zhakram (the zena-on-jco guest project; repo and
+fork checkout keep the `zena-jco` name). Inquiry and drafts live in subdirectories
 and get promoted here deliberately.
 
 ## research/ — start here

@@ -1,4 +1,4 @@
-// Vendored WASI WIT dependencies for the rektide:zena-jco / rektide:interop
+// Vendored WASI WIT dependencies for the rektide:zhakram / rektide:interop
 // worlds, so that wit-bindgen, wasm-tools and wac can resolve the
 // wasi:* package references without a network registry.
 //

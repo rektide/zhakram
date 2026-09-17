@@ -12,7 +12,7 @@ node "$ZENA_CLI" build handles-demo.zena --dce -o build/handles-demo.core.wasm
 # --dce compiles the component flavor of zena:error (fork F1d), so an
 # exception-using core module has no env externref imports to strip.
 "$WASM_TOOLS" component embed wit build/handles-demo.core.wasm \
-  -o build/handles-demo.embed.wasm --world zena-jco:handles/handles-demo@0.1.0
+  -o build/handles-demo.embed.wasm --world zhakram:handles/handles-demo@0.1.0
 "$WASM_TOOLS" component new build/handles-demo.embed.wasm \
   -o build/handles-demo.component.wasm
 
