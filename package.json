@@ -8,16 +8,16 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/rektide/zena-jco.git"
+		"url": "git+https://github.com/rektide/zhakram.git"
 	},
 	"keywords": [],
 	"author": "rektide de la faye",
 	"license": "MIT",
 	"type": "module",
 	"bugs": {
-		"url": "https://github.com/rektide/zena-jco/issues"
+		"url": "https://github.com/rektide/zhakram/issues"
 	},
-	"homepage": "https://github.com/rektide/zena-jco#readme",
+	"homepage": "https://github.com/rektide/zhakram#readme",
 	"module": "zena-jco.js",
 	"dependencies": {
 		"@bytecodealliance/jco": "^1.33.0",

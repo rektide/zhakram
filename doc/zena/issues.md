@@ -2,7 +2,7 @@
 type: Issue-ledger
 title: "zena defects encountered via zhakram"
 description: Narrative ledger of every zena compiler defect found by exercising zena through the jco componentization pipeline — symptom, root cause, repro, fix, verification, and status for each; plus adjacent non-zena defects hit along the way.
-resource: https://github.com/rektide/zena-jco/blob/main/doc/zena/issues.md
+resource: https://github.com/rektide/zhakram/blob/main/doc/zena/issues.md
 tags: [zena, jco, wasm-gc, component-model, defects, dce, fork]
 status: living doc
 generated:
